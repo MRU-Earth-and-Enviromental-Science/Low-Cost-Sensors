@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 import time
-import file
+
 
 data_log = []
 
@@ -22,7 +22,8 @@ while True:
                 "Timestamp": timestamp,
                 "Temperature (°C)": data["temperature"],
                 "Humidity (%)": data["humidity"],
-                "CH4 (ppm)": data["ch4_ppm"]
+                "CH4 (ppm)": data["ch4_ppm"],
+                "CO2 (ppm)": data["co2_ppm"]
             }
 
             # Append new row
@@ -33,7 +34,7 @@ while True:
             df.to_csv("esp32_sensor_log.csv", index=False)
 
             print(
-                f"{timestamp} | {data['temperature']} | {data['humidity']} | {data['ch4_ppm']}")
+                f"{timestamp} | {data['temperature']} | {data['humidity']} | {data['ch4_ppm']} | {data['co2_ppm']}")
 
         time.sleep(1)  # Log every second
 
