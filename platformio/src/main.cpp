@@ -5,24 +5,28 @@
 #include <math.h>
 #include <Wire.h>
 
-// ========== CONFIG ==========
+// initialization
+// temp
 #define DHTPIN 4
 #define DHTTYPE DHT11
+// ch4
 #define MQ4_PIN 34
 #define RL_VALUE 10.0
 #define RO_CLEAN_AIR_FACTOR 4.4
+// SDA and SCL
 #define SDA_pin 27
 #define SCL_pin 26
 #define K30_ADDRESS 0x68
+// wifi
 const char ssid[] = "gasSensor";
 const char password[] = "Neon2017";
 
-// ========== GLOBALS ==========
+// global
 WebServer server(80);
 DHT dht(DHTPIN, DHTTYPE);
 float Ro = 10.0;
 
-// ======= K30 CO₂ Class =======
+// K30 CO₂
 class K30_I2C
 {
 public:
@@ -58,14 +62,14 @@ private:
 
 K30_I2C k30(K30_ADDRESS);
 
-// ========== FUNCTION HEADERS ==========
+// functions
 void initWifi();
 void sendData();
 float readMQ4();
 float calculateResistance(int adcValue);
 float calibrateSensor();
 
-// ========== SETUP ==========
+// setup
 void setup()
 {
   Serial.begin(9600);
@@ -77,7 +81,7 @@ void setup()
   initWifi();
 }
 
-// ========== LOOP ==========
+// main loop
 void loop()
 {
   server.handleClient();
@@ -90,14 +94,14 @@ const char *htmlPage = R"rawliteral(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ESP32 Sensor Dashboard</title>
+  <title>Sensor Dashboard</title>
   <style>
     :root {
-      --bg-primary: #111111;
-      --bg-secondary: #1a1a1a;
-      --bg-tertiary: #222222;
+      --bg-primary: #000000;
+      --bg-secondary: #000000;
+      --bg-tertiary: #000000;
       --text-primary: #ffffff;
-      --text-secondary: #d0d0d0;
+      --text-secondary: #ffffff;
       --text-muted: #888888;
       --accent: #ffffff;
       --accent-hover: #e0e0e0;
@@ -254,7 +258,7 @@ const char *htmlPage = R"rawliteral(
 </head>
 
 <body>
-  <h1>📡 ESP32 Sensor Dashboard</h1>
+  <h1>📡 Sensor Dashboard</h1>
 
   <div class="dashboard-container">
     <div class="controls">
@@ -266,9 +270,12 @@ const char *htmlPage = R"rawliteral(
     <div class="log" id="logDisplay">Waiting for data...</div>
   </div>
 
-  <div class="footer">
-    <p><strong>Mount Royal University © 2025</strong></p>
-    <p>🛠 made by shivam walia, mechatronics @uwaterloo '29 <a
+  <div class="footer" style="padding:20px;">
+    <p><strong><a
+          href="https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm"
+          target="_blank">Mount Royal University © 2025</a></strong></p>
+    <div style="height: 5px;"></div>
+    <p>🛠 developed by shivam walia, mechatronics @uwaterloo '29 <a
         href="https://www.linkedin.com/in/shivam-walia-395877251/" target="_blank"
         style="color: #1e90ff; text-decoration: none;">
         [linkedIn]<a href="https://github.com/shivam-2507" target="_blank"
@@ -335,7 +342,7 @@ const char *htmlPage = R"rawliteral(
 </html>
 )rawliteral";
 
-// ========== WiFi Access Point ==========
+// wifi initialization
 void initWifi()
 {
   WiFi.softAP(ssid, password);
@@ -352,7 +359,7 @@ void initWifi()
   Serial.println("Web server started");
 }
 
-// ========== API Endpoint ==========
+// data export
 void sendData()
 {
   float h = dht.readHumidity();
@@ -382,7 +389,7 @@ void sendData()
   server.send(200, "application/json", json);
 }
 
-// ========== MQ4 GAS FUNCTIONS ==========
+// read CH4
 float readMQ4()
 {
   int adcValue = analogRead(MQ4_PIN);

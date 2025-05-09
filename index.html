@@ -4,14 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ESP32 Sensor Dashboard</title>
+  <title>Sensor Dashboard</title>
   <style>
     :root {
-      --bg-primary: #111111;
-      --bg-secondary: #1a1a1a;
-      --bg-tertiary: #222222;
+      --bg-primary: #000000;
+      --bg-secondary: #000000;
+      --bg-tertiary: #000000;
       --text-primary: #ffffff;
-      --text-secondary: #d0d0d0;
+      --text-secondary: #ffffff;
       --text-muted: #888888;
       --accent: #ffffff;
       --accent-hover: #e0e0e0;
@@ -168,7 +168,7 @@
 </head>
 
 <body>
-  <h1>📡 ESP32 Sensor Dashboard</h1>
+  <h1>📡 Sensor Dashboard</h1>
 
   <div class="dashboard-container">
     <div class="controls">
@@ -180,9 +180,12 @@
     <div class="log" id="logDisplay">Waiting for data...</div>
   </div>
 
-  <div class="footer">
-    <p><strong>Mount Royal University © 2025</strong></p>
-    <p>🛠 made by shivam walia, mechatronics @uwaterloo '29 <a
+  <div class="footer" style="padding:20px;">
+    <p><strong><a
+          href="https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm"
+          target="_blank">Mount Royal University © 2025</a></strong></p>
+    <div style="height: 5px;"></div>
+    <p>🛠 developed by shivam walia, mechatronics @uwaterloo '29 <a
         href="https://www.linkedin.com/in/shivam-walia-395877251/" target="_blank"
         style="color: #1e90ff; text-decoration: none;">
         [linkedIn]<a href="https://github.com/shivam-2507" target="_blank"
