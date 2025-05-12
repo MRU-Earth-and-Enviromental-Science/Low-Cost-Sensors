@@ -195,7 +195,7 @@
 
   <script>
     let logging = false;
-    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2"]];
+    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "Dust", "TVOC"]];
     const display = document.getElementById("logDisplay");
 
     function startLogging() {
@@ -234,10 +234,12 @@
             data.temperature,
             data.humidity,
             data.ch4_ppm,
-            data.co2_ppm
+            data.co2_ppm,
+            data.dust_density,
+            data.tvoc_ppb
           ];
           dataLog.push(row);
-          display.textContent += `\n${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm`;
+          display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | Dust=${data.dust_density} &micro;g/m<sup>3</sup> | TVOC=${data.tvoc_ppb}ppb`;
           display.scrollTop = display.scrollHeight;
         })
         .catch(err => {

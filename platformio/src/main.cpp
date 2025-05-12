@@ -4,6 +4,13 @@
 #include <WebServer.h>
 #include <math.h>
 #include <Wire.h>
+#include <SPI.h>
+#include <LiquidCrystal_I2C.h>
+#include "Adafruit_SGP30.h"
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define SSD1306_I2C_ADDRESS 0x27 // Common I2C address for SSD1306 displays
 
 // initialization
 // temp
@@ -14,17 +21,33 @@
 #define RL_VALUE 10.0
 #define RO_CLEAN_AIR_FACTOR 4.4
 // SDA and SCL
-#define SDA_pin 27
-#define SCL_pin 26
+#define SDA_pin 21
+#define SCL_pin 22
 #define K30_ADDRESS 0x68
+
+#define GY_SGP30_ADDRESS 0x58
+
+Adafruit_SGP30 sgp;
+
 // wifi
 const char ssid[] = "gasSensor";
 const char password[] = "Neon2017";
+
+int measurePin = 34;
+int ledPower = 23;
+int samplingTime = 280;
+int deltaTime = 40;
+int sleepTime = 9680;
+float voMeasured = 0;
+float calcVoltage = 0;
+float dustDensity = 0;
 
 // global
 WebServer server(80);
 DHT dht(DHTPIN, DHTTYPE);
 float Ro = 10.0;
+
+LiquidCrystal_I2C lcd(0x27, 20, 4); // Update this if I2C Scanner shows a different address
 
 // K30 CO₂
 class K30_I2C
@@ -69,15 +92,43 @@ float readMQ4();
 float calculateResistance(int adcValue);
 float calibrateSensor();
 
+void printToSerialAndLCD(const String &message)
+{
+  Serial.println(message);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(message.substring(0, 16));
+  if (message.length() > 16)
+  {
+    lcd.setCursor(0, 1);
+    lcd.print(message.substring(16, 32));
+  }
+}
+
 // setup
 void setup()
 {
   Serial.begin(9600);
-  Wire.begin(SDA_pin, SCL_pin);
+
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("LCD Test OK");
+
+  pinMode(ledPower, OUTPUT);
+  analogReadResolution(10);
+  Serial.println("***** ESP32 Dust Sensor (GP2Y1010AU0F) *****");
+
+  sgp.begin();
+  Serial.println("SGP30 initialized");
+
+  Wire.begin(); // Use default SDA=21, SCL=22 for ESP32
   dht.begin();
   Ro = calibrateSensor();
-  Serial.print("Calibrated Ro = ");
-  Serial.println(Ro);
+  printToSerialAndLCD("Calibrated Ro = " + String(Ro));
   initWifi();
 }
 
@@ -285,7 +336,7 @@ const char *htmlPage = R"rawliteral(
 
   <script>
     let logging = false;
-    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2"]];
+    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "Dust", "TVOC"]];
     const display = document.getElementById("logDisplay");
 
     function startLogging() {
@@ -324,10 +375,12 @@ const char *htmlPage = R"rawliteral(
             data.temperature,
             data.humidity,
             data.ch4_ppm,
-            data.co2_ppm
+            data.co2_ppm,
+            data.dust_density,
+            data.tvoc_ppb
           ];
           dataLog.push(row);
-          display.textContent += `\n${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm`;
+          display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | Dust=${data.dust_density} &micro;g/m<sup>3</sup> | TVOC=${data.tvoc_ppb}ppb`;
           display.scrollTop = display.scrollHeight;
         })
         .catch(err => {
@@ -347,8 +400,7 @@ void initWifi()
 {
   WiFi.softAP(ssid, password);
   IPAddress IP = WiFi.softAPIP();
-  Serial.print("Access Point started. IP: ");
-  Serial.println(IP);
+  printToSerialAndLCD("Access Point started. IP: " + IP.toString());
 
   server.on("/", HTTP_GET, []()
             { server.send(200, "text/html", htmlPage); });
@@ -356,12 +408,19 @@ void initWifi()
   server.on("/data", HTTP_GET, sendData);
 
   server.begin();
-  Serial.println("Web server started");
+  printToSerialAndLCD("Web server start");
 }
 
 // data export
 void sendData()
 {
+  delayMicroseconds(samplingTime);
+  voMeasured = analogRead(measurePin);
+  delayMicroseconds(deltaTime);
+  delayMicroseconds(sleepTime);
+  calcVoltage = voMeasured * (5.0 / 1024.0);
+  dustDensity = 170 * calcVoltage - 0.1;
+
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   float ch4 = readMQ4();
@@ -370,31 +429,45 @@ void sendData()
 
   if (isnan(h) || isnan(t))
   {
-    server.send(500, "application/json", "{\"error\": \"DHT read failed\"}");
-    return;
+    Serial.println("DHT read failed, using -1");
+    h = -1.0;
+    t = -1.0;
   }
   if (co2status == 1)
   {
-    server.send(500, "application/json", "{\"error\": \"CO2 read failed\"}");
-    return;
+    Serial.println("CO2 read failed, using -1");
+    co2ppm = -1;
+  }
+  int TVOC = -1;
+  if (sgp.IAQmeasure())
+  {
+    TVOC = sgp.TVOC;
+  }
+  else
+  {
+    Serial.println("SGP30 Measurement failed, using -1");
   }
 
   String json = "{";
   json += "\"temperature\":" + String(t, 2) + ",";
   json += "\"humidity\":" + String(h, 2) + ",";
   json += "\"ch4_ppm\":" + String(ch4, 2) + ",";
-  json += "\"co2_ppm\":" + String(co2ppm);
+  json += "\"co2_ppm\":" + String(co2ppm) + ",";
+  json += "\"dust_density\":" + String(dustDensity) + ",";
+  json += "\"tvoc_ppb\":" + String(TVOC);
   json += "}";
 
   server.send(200, "application/json", json);
+
+  delay(1000);
 }
 
 // read CH4
 float readMQ4()
 {
   int adcValue = analogRead(MQ4_PIN);
-  float Rs = calculateResistance(adcValue);
-  float ratio = Rs / Ro;
+  float rs1 = calculateResistance(adcValue);
+  float ratio = rs1 / Ro;
   float m = -0.318;
   float b = 1.133;
   float ppm_log = (log10(ratio) - b) / m;
