@@ -185,17 +185,17 @@
           href="https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm"
           target="_blank">Mount Royal University © 2025</a></strong></p>
     <div style="height: 5px;"></div>
-    <p>🛠 developed by shivam walia, mechatronics @uwaterloo '29 <a
-        href="https://www.linkedin.com/in/shivam-walia-395877251/" target="_blank"
-        style="color: #1e90ff; text-decoration: none;">
-        [linkedIn]<a href="https://github.com/shivam-2507" target="_blank"
-          style="color: #1e90ff; text-decoration: none;">
-          [github]</p>
+    <!--    <p>🛠 developed by shivam walia, mechatronics @uwaterloo '29 <a-->
+    <!--        href="https://www.linkedin.com/in/shivam-walia-395877251/" target="_blank"-->
+    <!--        style="color: #1e90ff; text-decoration: none;">-->
+    <!--        [linkedIn]<a href="https://github.com/shivam-2507" target="_blank"-->
+    <!--          style="color: #1e90ff; text-decoration: none;">-->
+    <!--          [github]</p>-->
   </div>
 
   <script>
     let logging = false;
-    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "Dust", "TVOC"]];
+    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "Dust", "TVOC", "CO"]];
     const display = document.getElementById("logDisplay");
 
     function startLogging() {
@@ -236,10 +236,11 @@
             data.ch4_ppm,
             data.co2_ppm,
             data.dust_density,
-            data.tvoc_ppb
+            data.tvoc_ppb,
+            data.co_ppm
           ];
           dataLog.push(row);
-          display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | Dust=${data.dust_density} &micro;g/m<sup>3</sup> | TVOC=${data.tvoc_ppb}ppb`;
+          display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | Dust=${data.dust_density} &micro;g/m<sup>3</sup> | TVOC=${data.tvoc_ppb}ppb | CO=${data.co_ppm}ppm`;
           display.scrollTop = display.scrollHeight;
         })
         .catch(err => {

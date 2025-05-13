@@ -18,8 +18,14 @@
 #define DHTTYPE DHT11
 // ch4
 #define MQ4_PIN 34
-#define RL_VALUE 10.0
-#define RO_CLEAN_AIR_FACTOR 4.4
+#define RL_VALUE 0.33
+#define RO_CLEAN_AIR_FACTOR_MQ4 4.4
+
+// co
+#define MQ9_PIN 35
+#define RL_VALUE_MQ9 0.33
+#define RO_CLEAN_AIR_FACTOR_MQ9 4.4
+
 // SDA and SCL
 #define SDA_pin 21
 #define SCL_pin 22
@@ -45,9 +51,10 @@ float dustDensity = 0;
 // global
 WebServer server(80);
 DHT dht(DHTPIN, DHTTYPE);
-float Ro = 10.0;
+float Ro_MQ4 = 0.33;
+float Ro_MQ9 = 0.33;
 
-LiquidCrystal_I2C lcd(0x27, 20, 4); // Update this if I2C Scanner shows a different address
+LiquidCrystal_I2C lcd(0x27, 20, 4); // I2C LCD Display
 
 // K30 CO₂
 class K30_I2C
@@ -89,8 +96,11 @@ K30_I2C k30(K30_ADDRESS);
 void initWifi();
 void sendData();
 float readMQ4();
-float calculateResistance(int adcValue);
-float calibrateSensor();
+float calculateResistanceMQ4(int adcValue);
+float calibrateSensorMQ4();
+float readMQ9();
+float calculateResistanceMQ9(int adcValue);
+float calibrateSensorMQ9();
 
 void printToSerialAndLCD(const String &message)
 {
@@ -127,8 +137,14 @@ void setup()
 
   Wire.begin(); // Use default SDA=21, SCL=22 for ESP32
   dht.begin();
-  Ro = calibrateSensor();
-  printToSerialAndLCD("Calibrated Ro = " + String(Ro));
+  // Calibrate MQ-4 sensor using 5000ppm CH4 in clean air per datasheet
+  Ro_MQ4 = calibrateSensorMQ4();
+  Ro_MQ9 = calibrateSensorMQ9();
+
+  printToSerialAndLCD("Calibrated Ro_MQ4 = " + String(Ro_MQ4));
+  delay(2000);
+  printToSerialAndLCD("Calibrated Ro_MQ9 = " + String(Ro_MQ9));
+  delay(2000);
   initWifi();
 }
 
@@ -326,17 +342,17 @@ const char *htmlPage = R"rawliteral(
           href="https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm"
           target="_blank">Mount Royal University © 2025</a></strong></p>
     <div style="height: 5px;"></div>
-    <p>🛠 developed by shivam walia, mechatronics @uwaterloo '29 <a
-        href="https://www.linkedin.com/in/shivam-walia-395877251/" target="_blank"
-        style="color: #1e90ff; text-decoration: none;">
-        [linkedIn]<a href="https://github.com/shivam-2507" target="_blank"
-          style="color: #1e90ff; text-decoration: none;">
-          [github]</p>
+<!--    <p>🛠 developed by shivam walia, mechatronics @uwaterloo '29 <a-->
+<!--        href="https://www.linkedin.com/in/shivam-walia-395877251/" target="_blank"-->
+<!--        style="color: #1e90ff; text-decoration: none;">-->
+<!--        [linkedIn]<a href="https://github.com/shivam-2507" target="_blank"-->
+<!--          style="color: #1e90ff; text-decoration: none;">-->
+<!--          [github]</p>-->
   </div>
 
   <script>
     let logging = false;
-    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "Dust", "TVOC"]];
+    let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "Dust", "TVOC", "CO"]];
     const display = document.getElementById("logDisplay");
 
     function startLogging() {
@@ -377,10 +393,11 @@ const char *htmlPage = R"rawliteral(
             data.ch4_ppm,
             data.co2_ppm,
             data.dust_density,
-            data.tvoc_ppb
+            data.tvoc_ppb,
+            data.co_ppm
           ];
           dataLog.push(row);
-          display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | Dust=${data.dust_density} &micro;g/m<sup>3</sup> | TVOC=${data.tvoc_ppb}ppb`;
+          display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | Dust=${data.dust_density} &micro;g/m<sup>3</sup> | TVOC=${data.tvoc_ppb}ppb | CO=${data.co_ppm}ppm`;
           display.scrollTop = display.scrollHeight;
         })
         .catch(err => {
@@ -409,14 +426,20 @@ void initWifi()
 
   server.begin();
   printToSerialAndLCD("Web server start");
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Sensor System Ready");
 }
 
 // data export
 void sendData()
 {
+  digitalWrite(ledPower, LOW);
   delayMicroseconds(samplingTime);
   voMeasured = analogRead(measurePin);
   delayMicroseconds(deltaTime);
+  digitalWrite(ledPower, HIGH);
   delayMicroseconds(sleepTime);
   calcVoltage = voMeasured * (5.0 / 1024.0);
   dustDensity = 170 * calcVoltage - 0.1;
@@ -424,6 +447,7 @@ void sendData()
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   float ch4 = readMQ4();
+  float co = readMQ9();
   int co2ppm = 0;
   int co2status = k30.readCO2(co2ppm);
 
@@ -454,7 +478,8 @@ void sendData()
   json += "\"ch4_ppm\":" + String(ch4, 2) + ",";
   json += "\"co2_ppm\":" + String(co2ppm) + ",";
   json += "\"dust_density\":" + String(dustDensity) + ",";
-  json += "\"tvoc_ppb\":" + String(TVOC);
+  json += "\"tvoc_ppb\":" + String(TVOC) + ",";
+  json += "\"co_ppm\":" + String(co, 2);
   json += "}";
 
   server.send(200, "application/json", json);
@@ -466,28 +491,61 @@ void sendData()
 float readMQ4()
 {
   int adcValue = analogRead(MQ4_PIN);
-  float rs1 = calculateResistance(adcValue);
-  float ratio = rs1 / Ro;
-  float m = -0.318;
-  float b = 1.133;
+  float rs1 = calculateResistanceMQ4(adcValue);
+  float ratio = rs1 / Ro_MQ4;
+  // Based on MQ-4 datasheet curve (RL=20kΩ), using log(ppm) = (log10(Rs/Ro) - b) / m
+  float m = -0.38;
+  float b = 1.3;
   float ppm_log = (log10(ratio) - b) / m;
   return pow(10, ppm_log);
 }
 
-float calculateResistance(int adcValue)
+float calculateResistanceMQ4(int adcValue)
 {
   float voltage = adcValue * (3.3 / 4095.0);
   return RL_VALUE * (3.3 - voltage) / voltage;
 }
 
-float calibrateSensor()
+float calibrateSensorMQ4()
 {
+  // Ro is the resistance in clean air at 1000ppm CH4, used as baseline
   float val = 0.0;
   for (int i = 0; i < 50; i++)
   {
-    val += calculateResistance(analogRead(MQ4_PIN));
+    val += calculateResistanceMQ4(analogRead(MQ4_PIN));
     delay(100);
   }
   val /= 50.0;
-  return val / RO_CLEAN_AIR_FACTOR;
+  return val / RO_CLEAN_AIR_FACTOR_MQ4;
+}
+
+float readMQ9()
+{
+  int adcValue = analogRead(MQ9_PIN);
+  float rs1 = calculateResistanceMQ9(adcValue);
+  float ratio = rs1 / Ro_MQ9;
+  // Based on MQ-9 datasheet curve (RL=20kΩ), using log(ppm) = (log10(Rs/Ro) - b) / m
+  float m = -0.38;
+  float b = 1.3;
+  float ppm_log = (log10(ratio) - b) / m;
+  return pow(10, ppm_log);
+}
+
+float calculateResistanceMQ9(int adcValue)
+{
+  float voltage = adcValue * (3.3 / 4095.0);
+  return RL_VALUE_MQ9 * (3.3 - voltage) / voltage;
+}
+
+float calibrateSensorMQ9()
+{
+  // Ro is the resistance in clean air at 0.33ppm CO, used as baseline
+  float val = 0.0;
+  for (int i = 0; i < 50; i++)
+  {
+    val += calculateResistanceMQ9(analogRead(MQ9_PIN));
+    delay(100);
+  }
+  val /= 50.0;
+  return val / RO_CLEAN_AIR_FACTOR_MQ9;
 }
