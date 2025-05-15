@@ -4,14 +4,15 @@
 #include <WebServer.h>
 #include <SPI.h>
 #include <LiquidCrystal_I2C.h>
-#include "Adafruit_SGP30.h"
-#include <Temp.h>
-#include <CH4.h>
-#include <CO.h>
-#include "K30.h"
-#include "PM25.h"
-#include "LCD.h"
-#include "SGP.h"
+#include <Adafruit_SGP30.h>
+#include "../include/Temp.h"
+#include "../include/CH4.h"
+#include "../include/CO.h"
+#include "../include/K30.h"
+#include "../include/PM25.h"
+#include "../include/LCD.h"
+#include "../include/SGP.h"
+#include "../include/dashboard.h"
 
 // create objects
 K30_I2C k30(K30_ADDRESS);
@@ -29,26 +30,6 @@ const char password[] = "Neon2017";
 WebServer server(80);
 float Ro_MQ4 = 0.33;
 float Ro_MQ9 = 0.33;
-
-// functions
-void initWifi()
-{
-  WiFi.softAP(ssid, password);
-  IPAddress IP = WiFi.softAPIP();
-  printToSerialAndLCD("Access Point started. IP: " + IP.toString());
-
-  server.on("/", HTTP_GET, []()
-            { server.send(200, "text/html", htmlPage); });
-
-  server.on("/data", HTTP_GET, sendData);
-
-  server.begin();
-  printToSerialAndLCD("Web server start");
-
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Sensor System Ready");
-}
 
 // export data
 void sendData()
@@ -92,6 +73,26 @@ void sendData()
   delay(1000);
 }
 
+// functions
+void initWifi()
+{
+  WiFi.softAP(ssid, password);
+  IPAddress IP = WiFi.softAPIP();
+  printToSerialAndLCD("Access Point started. IP: " + IP.toString());
+
+  server.on("/", HTTP_GET, []()
+            { server.send(200, "text/html", htmlPage); });
+
+  server.on("/data", HTTP_GET, sendData);
+
+  server.begin();
+  printToSerialAndLCD("Web server start");
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Sensor System Ready");
+}
+
 // setup
 void setup()
 {
@@ -124,5 +125,3 @@ void loop()
 {
   server.handleClient();
 }
-
-#include "dashboard.h"
