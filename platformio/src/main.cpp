@@ -34,11 +34,12 @@ float Ro_MQ9 = 0.33;
 // export data
 void sendData()
 {
+  Serial.println("[HTTP] /data endpoint hit");
   calibrateSensorPM25();
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   float ch4 = readMQ4();
-  float co = readMQ9();
+  float co = readMQ7();
   int co2ppm = 0;
   int co2status = k30.readCO2(co2ppm);
 
@@ -67,6 +68,9 @@ void sendData()
   json += "\"tvoc_ppb\":" + String(TVOC) + ",";
   json += "\"co_ppm\":" + String(co, 2);
   json += "}";
+
+  Serial.println("Sending JSON:");
+  Serial.println(json);
 
   server.send(200, "application/json", json);
 
@@ -111,11 +115,11 @@ void setup()
   dht.begin();
 
   Ro_MQ4 = calibrateSensorMQ4();
-  Ro_MQ9 = calibrateSensorMQ9();
+  Ro_MQ7 = calibrateSensorMQ7();
 
   printToSerialAndLCD("Calibrated Ro_MQ4 = " + String(Ro_MQ4));
   delay(2000);
-  printToSerialAndLCD("Calibrated Ro_MQ9 = " + String(Ro_MQ9));
+  printToSerialAndLCD("Calibrated Ro_MQ7 = " + String(Ro_MQ7));
   delay(2000);
   initWifi();
 }
