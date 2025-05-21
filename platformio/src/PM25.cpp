@@ -2,7 +2,7 @@
 
 int ledPower = 2;
 int samplingTime = 280;
-int measurePin = 35;
+int measurePin = 32;
 int deltaTime = 40;
 int sleepTime = 9680;
 float voMeasured = 0;
@@ -11,6 +11,7 @@ float dustDensity = 0;
 
 void calibrateSensorPM25()
 {
+    pinMode(ledPower, OUTPUT);
     digitalWrite(ledPower, LOW);
     delayMicroseconds(samplingTime);
     voMeasured = analogRead(measurePin);
