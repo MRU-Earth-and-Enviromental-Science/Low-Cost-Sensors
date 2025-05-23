@@ -3,19 +3,19 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <SPI.h>
-#include <LiquidCrystal_I2C.h>
-#include <Adafruit_SGP30.h>
+#include <Adafruit_SH110X.h>
+#include "../include/OLED.h"
 #include "../include/Temp.h"
 #include "../include/CH4.h"
 #include "../include/CO.h"
 #include "../include/K30.h"
-#include "../include/PM25.h"
-#include "../include/LCD.h"
 #include "../include/SGP.h"
 #include "../include/dashboard.h"
+#include "../include/NOx.h"
 
 // create objects
 K30_I2C k30(K30_ADDRESS);
+extern Adafruit_SH1106G display;
 Adafruit_SGP30 sgp;
 
 // I2C Protocol
@@ -30,24 +30,28 @@ const char password[] = "Neon2017";
 WebServer server(80);
 float Ro_MQ4 = 0.33;
 float Ro_MQ9 = 0.33;
+float Ro_MQ135 = 0.33;
 
 // export data
 void sendData()
 {
   Serial.println("[HTTP] /data endpoint hit");
-  calibrateSensorPM25();
+  oledPrintln("[HTTP] /data endpoint hit");
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   float ch4 = readMQ4();
   float co = readMQ7();
+  float nox = readMQ135();
   int co2ppm = 0;
   int co2status = k30.readCO2(co2ppm);
 
   if (co2status == 1)
   {
     Serial.println("CO2 read failed, using -1");
+    oledPrintln("CO2 read failed, using -1");
     co2ppm = -1;
   }
+
   int TVOC = -1;
   if (sgp.IAQmeasure())
   {
@@ -56,25 +60,26 @@ void sendData()
   else
   {
     Serial.println("SGP30 Measurement failed, using -1");
+    oledPrintln("SGP30 Measurement failed");
   }
 
-  // json serialization
   String json = "{";
   json += "\"temperature\":" + String(t, 2) + ",";
   json += "\"humidity\":" + String(h, 2) + ",";
   json += "\"ch4_ppm\":" + String(ch4, 2) + ",";
   json += "\"co2_ppm\":" + String(co2ppm) + ",";
-  json += "\"dust_density\":" + String(dustDensity) + ",";
   json += "\"tvoc_ppb\":" + String(TVOC) + ",";
-  json += "\"co_ppm\":" + String(co, 2);
+  json += "\"co_ppm\":" + String(co, 2) + ",";
+  json += "\"nox_ppm\":" + String(nox, 2);
   json += "}";
 
   Serial.println("Sending JSON:");
+  oledPrintln("Sending JSON");
   Serial.println(json);
 
   server.send(200, "application/json", json);
 
-  delay(1000);
+  yield(); // prevent watchdog timeout
 }
 
 // functions
@@ -82,45 +87,53 @@ void initWifi()
 {
   WiFi.softAP(ssid, password);
   IPAddress IP = WiFi.softAPIP();
-  printToSerialAndLCD("Access Point started. IP: " + IP.toString());
+  oledPrint("Access Point started. IP: " + IP.toString());
 
   server.on("/", HTTP_GET, []()
-            { server.send(200, "text/html", htmlPage); });
+            {
+              Serial.println("[HTTP] / page hit - serving dashboard");
+              oledPrintln("[HTTP] / page hit - serving dashboard");
+              server.send(200, "text/html", htmlPage); });
 
   server.on("/data", HTTP_GET, sendData);
 
   server.begin();
-  printToSerialAndLCD("Web server start");
+  Serial.println("Web server started");
+  oledPrintln("Web server started");
+  oledPrint("Web server start");
 
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Sensor System Ready");
+  oledPrint("Sensor System Ready");
+  Serial.println("Sensor System Ready");
+  oledPrintln("Sensor System Ready");
 }
 
 // setup
 void setup()
 {
   Serial.begin(115200);
-
-  // Initialize LCD
-  initLCD();
+  initOLED();
 
   analogReadResolution(10);
   Serial.println("***** ESP32 Dust Sensor Booting *****");
+  oledPrintln("ESP32 Dust Sensor Booting");
+  delay(2000);
 
-  sgp.begin();
   Serial.println("SGP30 initialized");
-
+  oledPrintln("SGP30 initialized");
+  // Consolidate OLED status messages to reduce flicker and unnecessary refreshes
+  oledPrint("SGP30 initialized\nI2C initialized\nDHT11 initialized");
   Wire.begin();
   dht.begin();
+  delay(2000);
+  float testHum = dht.readHumidity();
+  float testTemp = dht.readTemperature();
 
   Ro_MQ4 = calibrateSensorMQ4();
   Ro_MQ7 = calibrateSensorMQ7();
+  Ro_MQ135 = calibrateSensorMQ135();
 
-  printToSerialAndLCD("Calibrated Ro_MQ4 = " + String(Ro_MQ4));
-  delay(2000);
-  printToSerialAndLCD("Calibrated Ro_MQ7 = " + String(Ro_MQ7));
-  delay(2000);
+  oledPrint("Ro_MQ4 = " + String(Ro_MQ4) + "\nRo_MQ7 = " + String(Ro_MQ7));
+  delay(3000);
   initWifi();
 }
 
