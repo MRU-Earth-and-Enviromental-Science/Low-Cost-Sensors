@@ -24,7 +24,7 @@ Adafruit_SGP30 sgp;
 
 // wifi
 const char ssid[] = "Air Quality Monitor";
-const char password[] = "Neon2017";
+const char password[] = "LebronJames";
 
 // global
 WebServer server(80);
@@ -85,9 +85,24 @@ void sendData()
 // functions
 void initWifi()
 {
+  delay(500);
   WiFi.softAP(ssid, password);
+  delay(500);
   IPAddress IP = WiFi.softAPIP();
-  oledPrint("Access Point started. IP: " + IP.toString());
+  if (IP)
+  {
+    Serial.print("Access Point started. IP: ");
+    Serial.println(IP);
+    oledPrint("Access Point IP: " + IP.toString());
+  }
+  else
+  {
+    Serial.println("Failed to get IP. Restarting WiFi...");
+    WiFi.softAPdisconnect(true);
+    delay(1000);
+    WiFi.softAP(ssid, password);
+    delay(1000);
+  }
 
   server.on("/", HTTP_GET, []()
             {
@@ -119,26 +134,42 @@ void setup()
   delay(2000);
 
   Serial.println("SGP30 initialized");
+  delay(100);
   oledPrintln("SGP30 initialized");
   // Consolidate OLED status messages to reduce flicker and unnecessary refreshes
   oledPrint("SGP30 initialized\nI2C initialized\nDHT11 initialized");
-  Wire.begin();
+  Wire.begin(SDA_pin, SCL_pin);
+  delay(100);
   dht.begin();
-  delay(2000);
+  delay(200);
   float testHum = dht.readHumidity();
   float testTemp = dht.readTemperature();
 
+  Serial.println("Calibrating MQ4...");
   Ro_MQ4 = calibrateSensorMQ4();
+  delay(100);
+  Serial.println("Calibrating MQ7...");
   Ro_MQ7 = calibrateSensorMQ7();
+  delay(100);
+  Serial.println("Calibrating MQ135...");
   Ro_MQ135 = calibrateSensorMQ135();
 
-  oledPrint("Ro_MQ4 = " + String(Ro_MQ4) + "\nRo_MQ7 = " + String(Ro_MQ7));
   delay(3000);
   initWifi();
+  Serial.println("Setup complete. System ready.");
 }
 
 // main loop
 void loop()
 {
+  static unsigned long lastCheck = 0;
+  if (millis() - lastCheck > 10000)
+  {
+    if (WiFi.softAPgetStationNum() == 0)
+    {
+      Serial.println("No clients connected. Still running...");
+    }
+    lastCheck = millis();
+  }
   server.handleClient();
 }
