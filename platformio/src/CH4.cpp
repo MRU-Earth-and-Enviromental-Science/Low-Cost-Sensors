@@ -1,5 +1,7 @@
 #include "CH4.h"
 
+float Ro_MQ4 = 0.33; // Default Ro value for MQ-4 in clean air at 1000ppm CH4
+
 float calculateResistanceMQ4(int adcValue)
 {
     float voltage = adcValue * (3.3 / 4095.0);

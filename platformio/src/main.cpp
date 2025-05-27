@@ -1,8 +1,9 @@
-// includes
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_SGP30.h>
 #include <Adafruit_SH110X.h>
 #include "../include/OLED.h"
 #include "../include/Temp.h"
@@ -13,54 +14,55 @@
 #include "../include/dashboard.h"
 #include "../include/NOx.h"
 
-// create objects
-K30_I2C k30(K30_ADDRESS);
-extern Adafruit_SH1106G display;
-Adafruit_SGP30 sgp;
-
 // I2C Protocol
 #define SDA_pin 21
 #define SCL_pin 22
 
-// wifi
+// WiFi
 const char ssid[] = "Air Quality Monitor";
 const char password[] = "LebronJames";
 
-// global
+// Objects
+K30_I2C k30(K30_ADDRESS);
+extern Adafruit_SH1106G display;
+Adafruit_SGP30 sgp;
+bool sgp_initialized = false;
+
 WebServer server(80);
-float Ro_MQ4 = 0.33;
-float Ro_MQ9 = 0.33;
+
 float Ro_MQ135 = 0.33;
 
-// export data
+// ---- Function: Send JSON Data ----
 void sendData()
 {
   Serial.println("[HTTP] /data endpoint hit");
-  oledPrintln("[HTTP] /data endpoint hit");
+
   float h = dht.readHumidity();
   float t = dht.readTemperature();
+  if (isnan(h))
+    h = -1.0;
+  if (isnan(t))
+    t = -1.0;
+
   float ch4 = readMQ4();
   float co = readMQ7();
   float nox = readMQ135();
-  int co2ppm = 0;
-  int co2status = k30.readCO2(co2ppm);
 
-  if (co2status == 1)
+  int co2ppm = -1;
+  if (k30.readCO2(co2ppm) != 0)
   {
-    Serial.println("CO2 read failed, using -1");
-    oledPrintln("CO2 read failed, using -1");
+    Serial.println("CO2 read failed");
     co2ppm = -1;
   }
 
   int TVOC = -1;
-  if (sgp.IAQmeasure())
+  if (sgp_initialized && sgp.IAQmeasure())
   {
     TVOC = sgp.TVOC;
   }
   else
   {
-    Serial.println("SGP30 Measurement failed, using -1");
-    oledPrintln("SGP30 Measurement failed");
+    Serial.println("SGP30 read failed or not initialized");
   }
 
   String json = "{";
@@ -74,92 +76,68 @@ void sendData()
   json += "}";
 
   Serial.println("Sending JSON:");
-  oledPrintln("Sending JSON");
   Serial.println(json);
-
   server.send(200, "application/json", json);
-
-  yield(); // prevent watchdog timeout
 }
 
-// functions
+// ---- Function: Initialize Wi-Fi ----
 void initWifi()
 {
-  delay(500);
   WiFi.softAP(ssid, password);
-  delay(500);
+  delay(1000);
   IPAddress IP = WiFi.softAPIP();
-  if (IP)
-  {
-    Serial.print("Access Point started. IP: ");
-    Serial.println(IP);
-    oledPrint("Access Point IP: " + IP.toString());
-  }
-  else
-  {
-    Serial.println("Failed to get IP. Restarting WiFi...");
-    WiFi.softAPdisconnect(true);
-    delay(1000);
-    WiFi.softAP(ssid, password);
-    delay(1000);
-  }
+  Serial.println("Access Point started. IP: " + IP.toString());
+  oledPrint("AP IP: " + IP.toString());
 
   server.on("/", HTTP_GET, []()
             {
               Serial.println("[HTTP] / page hit - serving dashboard");
-              oledPrintln("[HTTP] / page hit - serving dashboard");
               server.send(200, "text/html", htmlPage); });
 
   server.on("/data", HTTP_GET, sendData);
 
   server.begin();
+  oledPrint("Web server started");
   Serial.println("Web server started");
-  oledPrintln("Web server started");
-  oledPrint("Web server start");
-
-  oledPrint("Sensor System Ready");
-  Serial.println("Sensor System Ready");
-  oledPrintln("Sensor System Ready");
 }
 
-// setup
+// ---- Setup ----
 void setup()
 {
   Serial.begin(115200);
   initOLED();
+  oledPrint("Booting...");
 
-  analogReadResolution(10);
-  Serial.println("***** ESP32 Dust Sensor Booting *****");
-  oledPrintln("ESP32 Dust Sensor Booting");
-  delay(2000);
-
-  Serial.println("SGP30 initialized");
-  delay(100);
-  oledPrintln("SGP30 initialized");
-  // Consolidate OLED status messages to reduce flicker and unnecessary refreshes
-  oledPrint("SGP30 initialized\nI2C initialized\nDHT11 initialized");
   Wire.begin(SDA_pin, SCL_pin);
   delay(100);
-  dht.begin();
-  delay(200);
-  float testHum = dht.readHumidity();
-  float testTemp = dht.readTemperature();
 
-  Serial.println("Calibrating MQ4...");
+  if (sgp.begin())
+  {
+    sgp_initialized = true;
+    Serial.println("SGP30 initialized");
+    oledPrint("SGP30 OK");
+  }
+  else
+  {
+    Serial.println("SGP30 init FAILED");
+    oledPrint("SGP30 FAILED");
+  }
+
+  dht.begin();
+  oledPrint("DHT11 OK");
+
   Ro_MQ4 = calibrateSensorMQ4();
-  delay(100);
-  Serial.println("Calibrating MQ7...");
   Ro_MQ7 = calibrateSensorMQ7();
-  delay(100);
-  Serial.println("Calibrating MQ135...");
   Ro_MQ135 = calibrateSensorMQ135();
 
-  delay(3000);
+  oledPrint("CH4 CO NOx OK");
+
+  delay(1000);
   initWifi();
-  Serial.println("Setup complete. System ready.");
+  oledPrint("System Ready");
 }
 
-// main loop
+// ---- Loop ----
 void loop()
 {
   static unsigned long lastCheck = 0;
@@ -167,9 +145,10 @@ void loop()
   {
     if (WiFi.softAPgetStationNum() == 0)
     {
-      Serial.println("No clients connected. Still running...");
+      Serial.println("No clients connected.");
     }
     lastCheck = millis();
   }
+
   server.handleClient();
 }

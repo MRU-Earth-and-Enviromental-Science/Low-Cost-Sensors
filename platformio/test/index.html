@@ -1,7 +1,3 @@
-#ifndef DASHBOARD_H
-#define DASHBOARD_H
-
-const char *htmlPage = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 
@@ -199,7 +195,6 @@ const char *htmlPage = R"rawliteral(
 
     <script>
         let logging = false;
-        let pollTimeout;
         let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "TVOC", "CO", "NOx"]];
         const display = document.getElementById("logDisplay");
 
@@ -214,7 +209,6 @@ const char *htmlPage = R"rawliteral(
         function stopLogging() {
             if (logging) {
                 logging = false;
-                clearTimeout(pollTimeout);
                 display.textContent += "\nData collection stopped.\n";
             }
         }
@@ -253,12 +247,9 @@ const char *htmlPage = R"rawliteral(
                     console.error("Fetch error:", err);
                     display.textContent += "\nError fetching data. Retrying...";
                 });
-            pollTimeout = setTimeout(poll, 1000);
+            setTimeout(poll, 1000);
         }
     </script>
 </body>
 
 </html>
-)rawliteral";
-
-#endif // DASHBOARD_H
