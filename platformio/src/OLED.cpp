@@ -1,6 +1,4 @@
 #include "../include/OLED.h"
-#include <Arduino.h>
-#include <vector>
 
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 

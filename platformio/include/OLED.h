@@ -5,6 +5,7 @@
 #include <Adafruit_GFX.h>
 #include <Wire.h>
 #include <Arduino.h>
+#include <vector>
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
