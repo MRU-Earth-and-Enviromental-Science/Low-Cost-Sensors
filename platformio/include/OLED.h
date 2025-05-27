@@ -2,6 +2,7 @@
 #define OLED_H
 
 #include <Adafruit_SH110X.h>
+#include <Adafruit_GFX.h>
 #include <Wire.h>
 #include <Arduino.h>
 

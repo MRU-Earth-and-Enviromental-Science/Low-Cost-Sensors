@@ -1,4 +1,6 @@
-#include "NOx.h"
+#include "../include/NOx.h"
+
+float Ro_MQ135 = 0.33;
 
 float calculateResistanceMQ135(int adcValue)
 {

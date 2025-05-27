@@ -1,4 +1,4 @@
-#include "Temp.h"
+#include "../include/Temp.h"
 
 DHT dht(DHTPIN, DHTTYPE);
 

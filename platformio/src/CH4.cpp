@@ -1,4 +1,4 @@
-#include "CH4.h"
+#include "../include/CH4.h"
 
 float Ro_MQ4 = 0.33; // Default Ro value for MQ-4 in clean air at 1000ppm CH4
 

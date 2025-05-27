@@ -3,8 +3,6 @@
 #include <WebServer.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <Adafruit_SGP30.h>
-#include <Adafruit_SH110X.h>
 #include "../include/OLED.h"
 #include "../include/Temp.h"
 #include "../include/CH4.h"
@@ -23,16 +21,12 @@ const char ssid[] = "Air Quality Monitor";
 const char password[] = "LebronJames";
 
 // Objects
-K30_I2C k30(K30_ADDRESS);
-extern Adafruit_SH1106G display;
 Adafruit_SGP30 sgp;
 bool sgp_initialized = false;
 
 WebServer server(80);
 
-float Ro_MQ135 = 0.33;
-
-// ---- Function: Send JSON Data ----
+// -- Function: Send data as JSON ----
 void sendData()
 {
   Serial.println("[HTTP] /data endpoint hit");
@@ -101,7 +95,7 @@ void initWifi()
   Serial.println("Web server started");
 }
 
-// ---- Setup ----
+// ---- Setup ---- (initialize when started)
 void setup()
 {
   Serial.begin(115200);
@@ -152,7 +146,7 @@ void loop()
   {
     if (WiFi.softAPgetStationNum() == 0)
     {
-      Serial.println("No clients connected.");
+      Serial.println("No clients connected."); // debug message
     }
     lastCheck = millis();
   }

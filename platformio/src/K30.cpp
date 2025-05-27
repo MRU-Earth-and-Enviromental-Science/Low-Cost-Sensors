@@ -1,4 +1,6 @@
-#include "K30.h"
+#include "../include/K30.h"
+
+K30_I2C k30(K30_ADDRESS);
 
 int K30_I2C::readCO2(int &CO2level)
 {
