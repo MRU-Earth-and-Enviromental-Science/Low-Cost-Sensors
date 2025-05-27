@@ -106,9 +106,14 @@ void setup()
 {
   Serial.begin(115200);
   initOLED();
-  oledPrint("Booting...");
+
+  // Added rectangle above triangle
+  display.fillRect(40, 8, 48, 16, SH110X_WHITE);
 
   Wire.begin(SDA_pin, SCL_pin);
+
+  oledPrint("Booting...");
+
   delay(100);
 
   if (sgp.begin())
@@ -121,10 +126,12 @@ void setup()
   {
     Serial.println("SGP30 init FAILED");
     oledPrint("SGP30 FAILED");
+    delay(500);
   }
 
   dht.begin();
   oledPrint("DHT11 OK");
+  delay(500);
 
   Ro_MQ4 = calibrateSensorMQ4();
   Ro_MQ7 = calibrateSensorMQ7();
@@ -132,7 +139,7 @@ void setup()
 
   oledPrint("CH4 CO NOx OK");
 
-  delay(1000);
+  delay(500);
   initWifi();
   oledPrint("System Ready");
 }
