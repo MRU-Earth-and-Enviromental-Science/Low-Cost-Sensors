@@ -1,109 +1,37 @@
-#include <WiFi.h>
-#include <WebServer.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SH110X.h>
 #include <Arduino.h>
+#include "PM25.h"
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-
-Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-void printWrappedText(const String &text, int x, int y)
-{
-  int lineHeight = 8;
-  int charWidth = 6;
-  std::vector<String> words;
-  String word;
-  for (char c : text)
-  {
-    if (c == ' ')
-    {
-      if (word.length() > 0)
-        words.push_back(word);
-      word = "";
-    }
-    else
-    {
-      word += c;
-    }
-  }
-  if (word.length() > 0)
-    words.push_back(word);
-
-  std::vector<String> lines;
-  String currentLine = "";
-  for (const String &w : words)
-  {
-    if ((currentLine.length() + w.length()) * charWidth > SCREEN_WIDTH)
-    {
-      lines.push_back(currentLine);
-      currentLine = w + " ";
-    }
-    else
-    {
-      currentLine += w + " ";
-    }
-  }
-  if (currentLine.length() > 0)
-    lines.push_back(currentLine);
-
-  for (size_t i = 0; i < lines.size(); i++)
-  {
-    String &line = lines[i];
-    int lineWidth = line.length() * charWidth;
-    int lineX = (SCREEN_WIDTH - lineWidth) / 2;
-    int lineY = y + i * lineHeight;
-    display.setCursor(lineX, lineY);
-    display.print(line);
-  }
-}
+Plantower_PMS7003 pms7003;
 
 void setup()
 {
-  display.begin();
-  display.clearDisplay();
+  Serial.begin(115200); // Debug via USB
+  delay(1000);
+  Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
 
-  display.fillRect(48, 20, 33, 25, SH110X_WHITE); // Added rectangle
-  display.fillTriangle(64, 60, 80, 45, 48, 45, SH110X_WHITE);
-  display.fillTriangle(64, 20, 48, 20, 48, 8, SH110X_WHITE); // Left triangle
-  display.fillTriangle(64, 20, 80, 20, 80, 8, SH110X_WHITE); // Right triangle
-
-  display.display();
-  delay(6000);
-  display.clearDisplay();
-
-  auto slideText = [](const String &text)
-  {
-    int16_t x1, y1;
-    uint16_t w, h;
-    display.setTextSize(1);
-    display.setTextColor(SH110X_WHITE);
-    display.getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
-
-    int targetX = (SCREEN_WIDTH - w) / 2;
-    int targetY = (SCREEN_HEIGHT - h) / 2;
-
-    for (int i = 0; i <= 10; ++i)
-    {
-      display.clearDisplay();
-      if (i % 2 == 0 || i > 7) // crude dither
-      {
-        printWrappedText(text, targetX, targetY);
-      }
-      display.display();
-      delay(100);
-    }
-
-    delay(1200);
-  };
-
-  slideText("Mount Royal University");
-  slideText("Sensor System Ready");
-
-  display.clearDisplay();
+  // Serial1 remapped: RX = GPIO4, TX not used
+  Serial1.begin(9600, SERIAL_8N1, 4, -1);
+  pms7003.init(&Serial1); // Use Serial1 for PMS7003
 }
 
 void loop()
 {
+  pms7003.updateFrame();
+
+  if (pms7003.hasNewData())
+  {
+    Serial.printf("\nSensor Version: %d    Error Code: %d\n", pms7003.getHWVersion(), pms7003.getErrorCode());
+    Serial.printf("    PM1.0 (ug/m3): %2d     [atmos: %d]\n", pms7003.getPM_1_0(), pms7003.getPM_1_0_atmos());
+    Serial.printf("    PM2.5 (ug/m3): %2d     [atmos: %d]\n", pms7003.getPM_2_5(), pms7003.getPM_2_5_atmos());
+    Serial.printf("    PM10  (ug/m3): %2d     [atmos: %d]\n", pms7003.getPM_10_0(), pms7003.getPM_10_0_atmos());
+    Serial.printf("    RAW: %2d[>0.3] %2d[>0.5] %2d[>1.0] %2d[>2.5] %2d[>5.0] %2d[>10]\n",
+                  pms7003.getRawGreaterThan_0_3(),
+                  pms7003.getRawGreaterThan_0_5(),
+                  pms7003.getRawGreaterThan_1_0(),
+                  pms7003.getRawGreaterThan_2_5(),
+                  pms7003.getRawGreaterThan_5_0(),
+                  pms7003.getRawGreaterThan_10_0());
+  }
+
+  delay(1000);
 }
