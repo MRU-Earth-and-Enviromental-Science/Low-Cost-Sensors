@@ -11,6 +11,9 @@
 #include "../include/SGP.h"
 #include "../include/dashboard.h"
 #include "../include/NOx.h"
+#include "../include/PM25.h"
+
+Plantower_PMS7003 pms7003;
 
 // I2C Protocol
 #define SDA_pin 21
@@ -59,6 +62,12 @@ void sendData()
     Serial.println("SGP30 read failed or not initialized");
   }
 
+  uint16_t pm_1_0 = pms7003.getPM_1_0();
+  uint16_t pm_2_5 = pms7003.getPM_2_5();
+  uint16_t pm_10_0 = pms7003.getPM_10_0();
+  uint16_t raw_0_3 = pms7003.getRawGreaterThan_0_3();
+  uint16_t raw_0_5 = pms7003.getRawGreaterThan_0_5();
+
   String json = "{";
   json += "\"temperature\":" + String(t, 2) + ",";
   json += "\"humidity\":" + String(h, 2) + ",";
@@ -67,10 +76,16 @@ void sendData()
   json += "\"tvoc_ppb\":" + String(TVOC) + ",";
   json += "\"co_ppm\":" + String(co, 2) + ",";
   json += "\"nox_ppm\":" + String(nox, 2);
+  json += ",\"pm_1_0\":" + String(pm_1_0) + ",";
+  json += "\"pm_2_5\":" + String(pm_2_5) + ",";
+  json += "\"pm_10_0\":" + String(pm_10_0);
   json += "}";
 
   Serial.println("Sending JSON:");
   Serial.println(json);
+  Serial.println("");
+  Serial.println("raw_0_3: " + String(raw_0_3));
+  Serial.println("raw_0_5: " + String(raw_0_5));
   server.send(200, "application/json", json);
 }
 
@@ -99,6 +114,7 @@ void initWifi()
 void setup()
 {
   Serial.begin(115200);
+
   initOLED();
 
   // Added rectangle above triangle
@@ -109,6 +125,14 @@ void setup()
   oledPrint("Booting...");
 
   delay(100);
+  // PMS7003 Starting
+  Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
+  Serial1.begin(9600, SERIAL_8N1, 4, -1);
+  // Attempt PMS7003 init
+  if (!pms7003.init(&Serial1))
+  {
+    oledPrint("PMS FAIL");
+  }
 
   if (sgp.begin())
   {

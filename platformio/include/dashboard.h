@@ -200,7 +200,7 @@ const char *htmlPage = R"rawliteral(
     <script>
         let logging = false;
         let pollTimeout;
-        let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "TVOC", "CO", "NOx"]];
+        let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "TVOC", "CO", "NOx", "PM1.0", "PM2.5", "PM10.0"]];
         const display = document.getElementById("logDisplay");
 
         function startLogging() {
@@ -243,10 +243,13 @@ const char *htmlPage = R"rawliteral(
                         data.co2_ppm,
                         data.tvoc_ppb,
                         data.co_ppm,
-                        data.nox_ppm
+                        data.nox_ppm,
+                        data.pm_1_0,
+                        data.pm_2_5,
+                        data.pm_10_0
                     ];
                     dataLog.push(row);
-                    display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | TVOC=${data.tvoc_ppb}ppb | CO=${data.co_ppm}ppm | NOx=${data.nox_ppm}ppm`;
+                    display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | TVOC=${data.tvoc_ppb}ppb | CO=${data.co_ppm}ppm | NOx=${data.nox_ppm}ppm | PM1.0=${data.pm_1_0}ug/m³ | PM2.5=${data.pm_2_5}ug/m³ | PM10.0=${data.pm_10_0}ug/m³`;
                     display.scrollTop = display.scrollHeight;
                 })
                 .catch(err => {
