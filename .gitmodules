@@ -1,0 +1,3 @@
+[submodule "RaspDocker/Onboard-SDK"]
+	path = RaspDocker/Onboard-SDK
+	url = git@github.com:dji-sdk/Onboard-SDK.git
