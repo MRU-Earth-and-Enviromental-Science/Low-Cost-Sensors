@@ -1,10 +1,9 @@
-FROM ubuntu:20.04
+FROM arm64v8/ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # OSDK Dependencies
 RUN apt update && apt install -y --no-install-recommends \
-    git \
     cmake \
     build-essential \
     libusb-1.0-0-dev \
@@ -40,7 +39,8 @@ RUN mkdir -p /etc/apt/keyrings && \
 
 # ROS Noetic and tools
 RUN apt-get update && apt-get install -y \
-    ros-noetic-desktop-full \
+    ros-noetic-ros-base \
+    ros-noetic-rqt \
     python3-rosdep \
     python3-rosinstall \
     python3-rosinstall-generator \
@@ -65,7 +65,7 @@ RUN sudo chown -R dji:dji /home/dji/Onboard-SDK
 
 
 WORKDIR /home/dji/Onboard-SDK
-RUN mkdir build && cd build && cmake .. -DADVANCED_SENSING=OFF && make -j$(nproc)
+RUN mkdir build && cd build && cmake .. -DADVANCED_SENSING=OFF && make -j1
 
 #catkin setup
 COPY catkin_ws /home/dji/catkin_ws
