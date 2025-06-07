@@ -22,17 +22,23 @@ RUN apt update && apt install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ROS Noetic Dependencies
-# ROS Noetic Dependencies
 RUN apt-get update && apt-get install -y \
-    curl gnupg2 lsb-release locales && \
+    curl \
+    gnupg2 \
+    lsb-release \
+    locales \
+    ca-certificates && \
     locale-gen en_US en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
-# Add ROS 1 Repo
-RUN echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros1.list && \
-    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+# ROS1 Repo
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc \
+    | gpg --dearmor -o /etc/apt/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros/ubuntu focal main" \
+    > /etc/apt/sources.list.d/ros1.list
 
-# Install ROS Noetic and tools
+# ROS Noetic and tools
 RUN apt-get update && apt-get install -y \
     ros-noetic-desktop-full \
     python3-rosdep \
@@ -42,29 +48,30 @@ RUN apt-get update && apt-get install -y \
     python3-catkin-tools \
     build-essential
 
-# Initialize rosdep (safely for Docker)
-RUN mkdir -p /etc/ros/rosdep/sources.list.d && \
-    rosdep init || true && \
-    rosdep update || true
+# Initialize rosdep (safe fallback for Docker)
+RUN sudo rosdep init || true && rosdep update || true
 
 RUN useradd -m -s /bin/bash dji && echo "dji ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 USER dji
 WORKDIR /home/dji
+
+# Source ROS in bash
+RUN echo "source /opt/ros/noetic/setup.bash" >> /home/dji/.bashrc
 
 # Copy your edited Onboard-SDK source into the container
 COPY Onboard-SDK /home/dji/Onboard-SDK
 
 RUN sudo chown -R dji:dji /home/dji/Onboard-SDK
 
-# Build it
+
 WORKDIR /home/dji/Onboard-SDK
 RUN mkdir build && cd build && cmake .. -DADVANCED_SENSING=OFF && make -j$(nproc)
 
-RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
-
-COPY catkin_ws /root/catkin_ws
-WORKDIR /root/catkin_ws
+#catkin setup
+COPY catkin_ws /home/dji/catkin_ws
+RUN sudo chown -R dji:dji /home/dji/catkin_ws
+WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
-RUN echo "source /root/catkin_ws/devel/setup.bash" >> ~/.bashrc
+RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
 CMD ["/bin/bash"]
