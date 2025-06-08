@@ -1,26 +1,43 @@
 #include "ros/ros.h"
-#include "std_msgs/Float32.h"
+#include "sensor_msgs/NavSatFix.h"
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
+#include <string>
 
-using namespace ros;
+int serial_port;
+
+void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
+{
+    char buffer[100];
+    snprintf(buffer, sizeof(buffer), "LAT:%.6f LNG:%.6f\n", msg->latitude, msg->longitude);
+    write(serial_port, buffer, strlen(buffer));
+    ROS_INFO("Sent to ESP32: %s", buffer);
+}
 
 int main(int argc, char **argv)
 {
-    init(argc, argv, "drone_data_node");
-    NodeHandle nh;
+    ros::init(argc, argv, "drone_data_node");
+    ros::NodeHandle nh;
 
-    Publisher pub = nh.advertise<std_msgs::Float32>("co2_ppm", 10);
-    Rate rate(1);
-    float dummy = 400.0;
-
-    while (ok())
+    // Open serial port to ESP32
+    serial_port = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
+    if (serial_port < 0)
     {
-        std_msgs::Float32 msg;
-        msg.data = dummy;
-        ROS_INFO("CO2 Reading: %f", msg.data);
-        pub.publish(msg);
-        dummy += 0.1;
-        rate.sleep();
+        perror("Unable to open serial port");
+        return -1;
     }
 
+    struct termios tty;
+    tcgetattr(serial_port, &tty);
+    cfsetospeed(&tty, B9600);
+    cfsetispeed(&tty, B9600);
+    tty.c_cflag |= (CLOCAL | CREAD);
+    tcsetattr(serial_port, TCSANOW, &tty);
+
+    ros::Subscriber sub = nh.subscribe("/dji_sdk/gps_position", 10, gpsCallback);
+    ros::spin();
+
+    close(serial_port);
     return 0;
 }

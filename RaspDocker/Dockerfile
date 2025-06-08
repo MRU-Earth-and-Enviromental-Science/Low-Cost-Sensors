@@ -77,4 +77,6 @@ WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
-CMD ["/bin/bash", "-i", "-c", "source /opt/ros/noetic/setup.bash && source /home/dji/catkin_ws/devel/setup.bash && roscore & sleep 3 && rosrun drone_data data_publisher"]
+COPY entrypoint.sh /home/dji/run.sh
+RUN chmod +x /home/dji/run.sh
+ENTRYPOINT ["/home/dji/run.sh"]
