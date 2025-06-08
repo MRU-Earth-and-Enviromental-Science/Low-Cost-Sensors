@@ -40,7 +40,9 @@ RUN mkdir -p /etc/apt/keyrings && \
 # ROS Noetic and tools
 RUN apt-get update && apt-get install -y \
     ros-noetic-ros-base \
-    ros-noetic-rqt \
+    ros-noetic-roslaunch \
+    ros-noetic-roscpp \
+    ros-noetic-std-msgs \
     python3-rosdep \
     python3-rosinstall \
     python3-rosinstall-generator \
@@ -52,26 +54,27 @@ RUN apt-get update && apt-get install -y \
 RUN sudo rosdep init || true && rosdep update || true
 
 RUN useradd -m -s /bin/bash dji && echo "dji ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Copy your edited Onboard-SDK source into the container
+COPY Onboard-SDK /home/dji/Onboard-SDK
+
+RUN chown -R dji:dji /home/dji/Onboard-SDK
+
+#catkin setup
+COPY catkin_ws /home/dji/catkin_ws
+RUN chown -R dji:dji /home/dji/catkin_ws
+
 USER dji
 WORKDIR /home/dji
 
 # Source ROS in bash
 RUN echo "source /opt/ros/noetic/setup.bash" >> /home/dji/.bashrc
 
-# Copy your edited Onboard-SDK source into the container
-COPY Onboard-SDK /home/dji/Onboard-SDK
-
-RUN sudo chown -R dji:dji /home/dji/Onboard-SDK
-
-
 WORKDIR /home/dji/Onboard-SDK
 RUN mkdir build && cd build && cmake .. -DADVANCED_SENSING=OFF && make -j1
 
-#catkin setup
-COPY catkin_ws /home/dji/catkin_ws
-RUN sudo chown -R dji:dji /home/dji/catkin_ws
 WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
-CMD ["/bin/bash"]
+CMD ["/bin/bash", "-i", "-c", "source /opt/ros/noetic/setup.bash && source /home/dji/catkin_ws/devel/setup.bash && roscore & sleep 3 && rosrun drone_data data_publisher"]

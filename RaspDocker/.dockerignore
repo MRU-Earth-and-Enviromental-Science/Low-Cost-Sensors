@@ -1,3 +1,4 @@
+#optimize build times
 __pycache__/
 *.pyc
 *.pyo
