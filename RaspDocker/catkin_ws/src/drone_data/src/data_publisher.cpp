@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     // Open serial port to ESP32
-    serial_port = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
+    serial_port = open("/dev/serial0", O_RDWR | O_NOCTTY);
     if (serial_port < 0)
     {
         perror("Warning: Unable to open serial port. Continuing without serial output.");
