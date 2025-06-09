@@ -64,7 +64,6 @@ RUN chown -R dji:dji /home/dji/Onboard-SDK
 COPY catkin_ws /home/dji/catkin_ws
 RUN chown -R dji:dji /home/dji/catkin_ws
 
-USER dji
 WORKDIR /home/dji
 
 # Source ROS in bash
@@ -79,4 +78,5 @@ RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
 COPY entrypoint.sh /home/dji/run.sh
 RUN chmod +x /home/dji/run.sh
+USER dji
 ENTRYPOINT ["/home/dji/run.sh"]
