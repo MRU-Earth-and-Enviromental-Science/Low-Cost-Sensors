@@ -43,8 +43,8 @@ int main(int argc, char **argv)
     if (!sub)
     {
         ROS_ERROR("Failed to subscribe to GPS topic");
-        cout << "Failed to subscribe to GPS topic" << endl;
-        sub = -1;
+        std::cout << "Failed to subscribe to GPS topic" << std::endl;
+       // sub = -1;
     }
     ros::spin();
 
