@@ -76,7 +76,7 @@ WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
-COPY entrypoint.sh /home/dji/run.sh
-RUN chmod +x /home/dji/run.sh
+COPY run.sh /home/dji/run.sh
+RUN chmod +x /home/dji/run.sh && chown dji:dji /home/dji/run.sh
 USER dji
 ENTRYPOINT ["/home/dji/run.sh"]
