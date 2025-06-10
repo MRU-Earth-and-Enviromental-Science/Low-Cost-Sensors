@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <esp_now.h>
+#include <esp_wifi.h>
 #include <WebServer.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -9,7 +11,6 @@
 #include "../include/CO.h"
 #include "../include/K30.h"
 #include "../include/SGP.h"
-#include "../include/dashboard.h"
 #include "../include/NOx.h"
 #include "../include/PM25.h"
 
@@ -19,120 +20,110 @@ Plantower_PMS7003 pms7003;
 #define SDA_pin 21
 #define SCL_pin 22
 
-// WiFi
-const char ssid[] = "Air Quality Monitor";
-const char password[] = "LebronJames";
-
 // Objects
 Adafruit_SGP30 sgp;
 bool sgp_initialized = false;
 
-WebServer server(80);
+uint8_t broadcastAddress[] = {0x10, 0x06, 0x1C, 0xF2, 0x02, 0xCC};
 
-// -- Function: Send data as JSON ----
-void sendData()
+typedef struct __attribute__((packed))
 {
-  Serial.println("[HTTP] /data endpoint hit");
+  float temp;
+  float humid;
+  float ch4;        // done
+  float co2;        // done
+  float tvoc;       // done
+  float co;         // done
+  float nox;        // done
+  uint16_t pm_1_0;  // done
+  uint16_t pm_2_5;  // done
+  uint16_t pm_10_0; // done
+} SensorData;
 
+SensorData sensorData;
+
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
+  Serial.print("ESP-NOW send status: ");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
+}
+
+void readSensors()
+{
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   if (isnan(h))
     h = -1.0;
   if (isnan(t))
     t = -1.0;
-
-  float ch4 = readMQ4();
-  float co = readMQ7();
-  float nox = readMQ135();
-
   int co2ppm = -1;
   if (k30.readCO2(co2ppm) != 0)
-  {
     Serial.println("CO2 read failed");
-    co2ppm = -1;
-  }
 
   int TVOC = -1;
   if (sgp_initialized && sgp.IAQmeasure())
-  {
     TVOC = sgp.TVOC;
-  }
-  else
-  {
-    Serial.println("SGP30 read failed or not initialized");
-  }
 
-  uint16_t pm_1_0 = pms7003.getPM_1_0();
-  uint16_t pm_2_5 = pms7003.getPM_2_5();
-  uint16_t pm_10_0 = pms7003.getPM_10_0();
-  uint16_t raw_0_3 = pms7003.getRawGreaterThan_0_3();
-  uint16_t raw_0_5 = pms7003.getRawGreaterThan_0_5();
-
-  String json = "{";
-  json += "\"temperature\":" + String(t, 2) + ",";
-  json += "\"humidity\":" + String(h, 2) + ",";
-  json += "\"ch4_ppm\":" + String(ch4, 2) + ",";
-  json += "\"co2_ppm\":" + String(co2ppm) + ",";
-  json += "\"tvoc_ppb\":" + String(TVOC) + ",";
-  json += "\"co_ppm\":" + String(co, 2) + ",";
-  json += "\"nox_ppm\":" + String(nox, 2);
-  json += ",\"pm_1_0\":" + String(pm_1_0) + ",";
-  json += "\"pm_2_5\":" + String(pm_2_5) + ",";
-  json += "\"pm_10_0\":" + String(pm_10_0);
-  json += "}";
-
-  Serial.println("Sending JSON:");
-  Serial.println(json);
-  Serial.println("");
-  Serial.println("raw_0_3: " + String(raw_0_3));
-  Serial.println("raw_0_5: " + String(raw_0_5));
-  server.send(200, "application/json", json);
+  sensorData = {
+    .temp : t,
+    .humid : h,
+    .ch4 : readMQ4(),
+    .nox : readMQ135(),
+    .co2 : (float)co2ppm,
+    .co : readMQ7(),
+    .tvoc : (float)TVOC,
+    .pm_1_0 : pms7003.getPM_1_0(),
+    .pm_2_5 : pms7003.getPM_2_5(),
+    .pm_10_0 : pms7003.getPM_10_0()
+  };
 }
 
-// ---- Function: Initialize Wi-Fi ----
-void initWifi()
+void sendData()
 {
-  WiFi.softAP(ssid, password);
-  delay(1000);
-  IPAddress IP = WiFi.softAPIP();
-  Serial.println("Access Point started. IP: " + IP.toString());
-  oledPrint("AP IP: " + IP.toString());
-
-  server.on("/", HTTP_GET, []()
-            {
-              Serial.println("[HTTP] / page hit - serving dashboard");
-              server.send(200, "text/html", htmlPage); });
-
-  server.on("/data", HTTP_GET, sendData);
-
-  server.begin();
-  oledPrint("Web server started");
-  Serial.println("Web server started");
+  readSensors();
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sensorData, sizeof(sensorData));
+  if (result == ESP_OK)
+    Serial.println("ESP-NOW send success");
+  else
+    Serial.printf("ESP-NOW send error: %d\n", result);
 }
 
-// ---- Setup ---- (initialize when started)
 void setup()
 {
   Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
+  Serial.println("ESP-NOW in Long-Range mode");
+
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("ESP-NOW init failed");
+    return;
+  }
+
+  esp_now_register_send_cb(OnDataSent);
+
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  {
+    Serial.println("Failed to add peer");
+    return;
+  }
 
   initOLED();
-
-  // Added rectangle above triangle
-  display.fillRect(40, 8, 48, 16, SH110X_WHITE);
-
   Wire.begin(SDA_pin, SCL_pin);
-
   oledPrint("Booting...");
 
   delay(100);
-  // PMS7003 Starting
   Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
   Serial1.begin(9600, SERIAL_8N1, 4, -1);
-  // Attempt PMS7003 init
+
   if (!pms7003.init(&Serial1))
-  {
     oledPrint("PMS FAIL");
-  }
 
   if (sgp.begin())
   {
@@ -149,31 +140,23 @@ void setup()
 
   dht.begin();
   oledPrint("DHT11 OK");
-  delay(500);
+  delay(100);
 
   Ro_MQ4 = calibrateSensorMQ4();
   Ro_MQ7 = calibrateSensorMQ7();
   Ro_MQ135 = calibrateSensorMQ135();
 
   oledPrint("CH4 CO NOx OK");
-
   delay(500);
-  initWifi();
   oledPrint("System Ready");
 }
 
-// ---- Loop ----
 void loop()
 {
-  static unsigned long lastCheck = 0;
-  if (millis() - lastCheck > 10000)
+  static unsigned long lastSend = 0;
+  if (millis() - lastSend > 10000)
   {
-    if (WiFi.softAPgetStationNum() == 0)
-    {
-      Serial.println("No clients connected."); // debug message
-    }
-    lastCheck = millis();
+    sendData();
+    lastSend = millis();
   }
-
-  server.handleClient();
 }

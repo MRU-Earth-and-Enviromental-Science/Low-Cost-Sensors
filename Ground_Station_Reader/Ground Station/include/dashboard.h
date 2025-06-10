@@ -1,0 +1,423 @@
+#ifndef DASHBOARD_H
+#define DASHBOARD_H
+
+const char *htmlPage = R"rawliteral(
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sensor Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #000000;
+            --bg-tertiary: #000000;
+            --text-primary: #ffffff;
+            --text-secondary: #ffffff;
+            --text-muted: #888888;
+            --accent: #ffffff;
+            --accent-hover: #e0e0e0;
+            --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.3);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            justify-content: center;
+        }
+
+        button {
+            background-color: var(--bg-tertiary);
+            border: 1px solid #333;
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+            min-width: 120px;
+        }
+
+        button:hover {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-sm);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .table-container {
+            width: 100%;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            height: 400px;
+            overflow: auto;
+            border: 1px solid #333;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .table-container:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .status-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            z-index: 10;
+        }
+
+        th {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid #333;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        th:last-child {
+            border-right: none;
+        }
+
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #222;
+            border-right: 1px solid #222;
+            color: var(--text-secondary);
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tbody tr:hover {
+            background-color: #111;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #0a0a0a;
+        }
+
+        .footer {
+            margin-top: 2.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-align: center;
+            width: 100%;
+            max-width: 1200px;
+            padding: 1rem;
+            border-top: 1px solid #333;
+        }
+
+        .footer strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .footer a {
+            color: #1e90ff;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer a:hover {
+            color: #4da6ff;
+        }
+
+        /* Custom scrollbar */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: var(--border-radius);
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .table-container::-webkit-scrollbar-corner {
+            background: var(--bg-secondary);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            th,
+            td {
+                padding: 8px 4px;
+                font-size: 0.75rem;
+            }
+
+            .dashboard-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📡 Sensor Dashboard</h1>
+
+    <div class="dashboard-container">
+        <div class="controls">
+            <button onclick="startLogging()" id="startBtn">Start</button>
+            <button onclick="stopLogging()" id="stopBtn" disabled>Stop</button>
+            <button onclick="downloadCSV()">Download CSV</button>
+        </div>
+
+        <div class="table-container" id="tableContainer">
+            <div class="status-message" id="statusMessage">Waiting for data...</div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Temp (°C)</th>
+                        <th>Humidity (%)</th>
+                        <th>CH₄ (ppm)</th>
+                        <th>CO₂ (ppm)</th>
+                        <th>TVOC (ppb)</th>
+                        <th>CO (ppm)</th>
+                        <th>NOx (ppm)</th>
+                        <th>PM1.0 (μg/m³)</th>
+                        <th>PM2.5 (μg/m³)</th>
+                        <th>PM10.0 (μg/m³)</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer" style="padding:20px;">
+        <p><strong><a
+                    href="https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm"
+                    target="_blank">Mount Royal University © 2025</a></strong></p>
+        <div style="height: 5px;"></div>
+        <p>🛠 developed by shivam walia, mechatronics @uwaterloo '29 <a
+                href="https://www.linkedin.com/in/shivam-walia-395877251/" target="_blank"
+                style="color: #1e90ff; text-decoration: none;">
+                [linkedIn]</a> <a href="https://github.com/shivam-2507" target="_blank"
+                style="color: #1e90ff; text-decoration: none;">
+                [github]</a></p>
+    </div>
+
+    <script>
+        let logging = false;
+        let pollTimeout;
+        let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "TVOC", "CO", "NOx", "PM1.0", "PM2.5", "PM10.0"]];
+        const statusMessage = document.getElementById("statusMessage");
+        const dataTable = document.getElementById("dataTable");
+        const dataTableBody = document.getElementById("dataTableBody");
+        const tableContainer = document.getElementById("tableContainer");
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+
+        function startLogging() {
+            if (!logging) {
+                logging = true;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                statusMessage.textContent = "Starting data collection...";
+                poll();
+            }
+        }
+
+        function stopLogging() {
+            if (logging) {
+                logging = false;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                clearTimeout(pollTimeout);
+                statusMessage.textContent = "Data collection stopped.";
+                statusMessage.style.display = "flex";
+                dataTable.style.display = "none";
+            }
+        }
+
+        function downloadCSV() {
+            const csv = dataLog.map(row => row.join(",")).join("\n");
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "esp32_log_" + new Date().toISOString().slice(0, 10) + ".csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function addDataRow(data) {
+            const row = document.createElement("tr");
+            const now = new Date().toLocaleTimeString();
+
+            row.innerHTML = `
+                <td>${now}</td>
+                <td>${data.temperature}</td>
+                <td>${data.humidity}</td>
+                <td>${data.ch4_ppm}</td>
+                <td>${data.co2_ppm}</td>
+                <td>${data.tvoc_ppb}</td>
+                <td>${data.co_ppm}</td>
+                <td>${data.nox_ppm}</td>
+                <td>${data.pm_1_0}</td>
+                <td>${data.pm_2_5}</td>
+                <td>${data.pm_10_0}</td>
+            `;
+
+            dataTableBody.appendChild(row);
+
+            // Keep only last 50 rows for performance
+            if (dataTableBody.children.length > 50) {
+                dataTableBody.removeChild(dataTableBody.firstChild);
+            }
+
+            // Auto scroll to bottom
+            tableContainer.scrollTop = tableContainer.scrollHeight;
+        }
+
+        function poll() {
+            if (!logging) return;
+
+            fetch("/data")
+                .then(res => res.json())
+                .then(data => {
+                    // Hide status message and show table on first data
+                    if (statusMessage.style.display !== "none") {
+                        statusMessage.style.display = "none";
+                        dataTable.style.display = "table";
+                    }
+
+                    const now = new Date().toLocaleTimeString();
+                    const row = [
+                        now,
+                        data.temperature,
+                        data.humidity,
+                        data.ch4_ppm,
+                        data.co2_ppm,
+                        data.tvoc_ppb,
+                        data.co_ppm,
+                        data.nox_ppm,
+                        data.pm_1_0,
+                        data.pm_2_5,
+                        data.pm_10_0
+                    ];
+                    dataLog.push(row);
+                    addDataRow(data);
+                })
+                .catch(err => {
+                    console.error("Fetch error:", err);
+                    statusMessage.textContent = "Error fetching data. Retrying...";
+                    statusMessage.style.display = "flex";
+                    dataTable.style.display = "none";
+                });
+
+            pollTimeout = setTimeout(poll, 1000);
+        }
+    </script>
+</body>
+
+</html>
+)rawliteral";
+
+#endif
