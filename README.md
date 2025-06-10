@@ -42,7 +42,7 @@ git clone https://github.com/yourusername/Low-Costs-Sensors-Gas.git
 cd Low-Costs-Sensors-Gas
 code . # Open in VSCode
 ```
-## 🚀 4. Upload Code to ESP32
+### 3. Upload Code to ESP32
 
 - Connect your **ESP32 dev board** via USB.  
 - Open the project folder in **Visual Studio Code**.  
@@ -52,6 +52,8 @@ code . # Open in VSCode
 
 > PlatformIO will automatically detect your environment and upload the firmware to the board.
 
+### 4. Raspberry Pi Set-Up
+- stuff stuff stuff here (later)
 ---
 
 ## 🧰 Hardware Used
@@ -63,7 +65,10 @@ code . # Open in VSCode
 - **Plantower PMS7003** (PM2.5 Sensor)
 - **SGP30** (VOC Sensor)
 - **DHT11 / DHT22** (Temperature & Humidity)
+- **Custom PCB** Ordered from JLC PCB
 
+## Casing
+- STEP and STL Files avaliable
 
 ---
 
