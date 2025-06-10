@@ -55,6 +55,8 @@ RUN sudo rosdep init || true && rosdep update || true
 
 RUN useradd -m -s /bin/bash dji && echo "dji ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+RUN usermod -aG dialout dji
+
 # Copy your edited Onboard-SDK source into the container
 COPY Onboard-SDK /home/dji/Onboard-SDK
 
