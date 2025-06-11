@@ -66,6 +66,8 @@ RUN chown -R dji:dji /home/dji/Onboard-SDK
 COPY catkin_ws /home/dji/catkin_ws
 RUN chown -R dji:dji /home/dji/catkin_ws
 
+COPY Onboard-SDK-ROS /home/dji/catkin_ws/src/Onboard-SDK-ROS
+
 WORKDIR /home/dji
 
 # Source ROS in bash
