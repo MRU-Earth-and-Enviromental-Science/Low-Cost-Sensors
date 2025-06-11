@@ -58,29 +58,26 @@ RUN apt-get update && apt-get install -y \
     python3-catkin-tools \
     build-essential
 
-# Initialize rosdep (safe fallback for Docker)
 RUN sudo rosdep init || true && rosdep update || true
 
 RUN useradd -m -s /bin/bash dji && echo "dji ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
 RUN usermod -aG dialout dji
 
-# Copy your edited dji_osdk_ros source into the container
-COPY Onboard-SDK-ROS /home/dji/catkin_ws/src/dji_osdk_ros
+COPY catkin_ws /home/dji/catkin_ws
+
+RUN mv /home/dji/catkin_ws/src/dji_sdk /home/dji/catkin_ws/src/dji_osdk_ros
 
 RUN chown -R dji:dji /home/dji/catkin_ws
 
-#catkin setup
 WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 
 WORKDIR /home/dji
-
-# Source ROS in bash
 RUN echo "source /opt/ros/noetic/setup.bash" >> /home/dji/.bashrc
 RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
 COPY run.sh /home/dji/run.sh
 RUN chmod +x /home/dji/run.sh && chown dji:dji /home/dji/run.sh
+
 USER dji
 ENTRYPOINT ["/home/dji/run.sh"]

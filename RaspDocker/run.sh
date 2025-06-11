@@ -12,8 +12,8 @@ ROSCORE_PID=$!
 sleep 5
 
 rosrun dji_sdk dji_sdk_node \
-  _app_id:=${APP_ID:1163880} \
-  _app_key:=${APP_KEY:559e776a2a67e8e2e0f015842813272eed634a81a0df29cd25d364ea04738303} \
+  _app_id:=${APP_ID:-1163880} \
+  _app_key:=${APP_KEY:-559e776a2a67e8e2e0f015842813272eed634a81a0df29cd25d364ea04738303} \
   _serial_name:=/dev/ttyUSB0 \
   _baud_rate:=115200 \
   _core_connection:=true &
