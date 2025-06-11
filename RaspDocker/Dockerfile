@@ -15,11 +15,12 @@ RUN apt update && apt install -y --no-install-recommends \
     libavutil-dev \
     libswscale-dev \
     libssl-dev \
-    libsdl2-dev \
     nano \
     sudo \
     wget \
     && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y libsdl2-dev
 
 # ROS Noetic Dependencies
 RUN apt-get update && apt-get install -y \
@@ -45,7 +46,11 @@ RUN apt-get update && apt-get install -y \
     ros-noetic-roscpp \
     ros-noetic-std-msgs \
     ros-noetic-nmea-msgs \
+    ros-noetic-sensor-msgs \
+    ros-noetic-geometry-msgs \
+    ros-noetic-nav-msgs \
     ros-noetic-tf \
+    ros-noetic-message-generation \
     python3-rosdep \
     python3-rosinstall \
     python3-rosinstall-generator \
@@ -60,27 +65,19 @@ RUN useradd -m -s /bin/bash dji && echo "dji ALL=(ALL) NOPASSWD:ALL" >> /etc/sud
 
 RUN usermod -aG dialout dji
 
-# Copy your edited Onboard-SDK source into the container
-COPY Onboard-SDK /home/dji/Onboard-SDK
+# Copy your edited dji_osdk_ros source into the container
+COPY Onboard-SDK-ROS /home/dji/catkin_ws/src/dji_osdk_ros
 
-RUN chown -R dji:dji /home/dji/Onboard-SDK
-
-#catkin setup
-COPY catkin_ws /home/dji/catkin_ws
 RUN chown -R dji:dji /home/dji/catkin_ws
 
-COPY Onboard-SDK-ROS /home/dji/catkin_ws/src/Onboard-SDK-ROS
+#catkin setup
+WORKDIR /home/dji/catkin_ws
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 
 WORKDIR /home/dji
 
 # Source ROS in bash
 RUN echo "source /opt/ros/noetic/setup.bash" >> /home/dji/.bashrc
-
-WORKDIR /home/dji/Onboard-SDK
-RUN mkdir build && cd build && cmake .. -DADVANCED_SENSING=OFF && make -j1
-
-WORKDIR /home/dji/catkin_ws
-RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
 COPY run.sh /home/dji/run.sh
