@@ -15,6 +15,7 @@ RUN apt update && apt install -y --no-install-recommends \
     libavutil-dev \
     libswscale-dev \
     libssl-dev \
+    libsdl2-dev \
     nano \
     sudo \
     wget \
@@ -43,6 +44,8 @@ RUN apt-get update && apt-get install -y \
     ros-noetic-roslaunch \
     ros-noetic-roscpp \
     ros-noetic-std-msgs \
+    ros-noetic-nmea-msgs \
+    ros-noetic-tf \
     python3-rosdep \
     python3-rosinstall \
     python3-rosinstall-generator \
