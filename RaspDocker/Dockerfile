@@ -67,6 +67,12 @@ COPY catkin_ws /home/dji/catkin_ws
 
 RUN chown -R dji:dji /home/dji/catkin_ws
 
+WORKDIR /home/dji/catkin_ws/src
+RUN git clone --recurse-submodules https://github.com/dji-sdk/Onboard-SDK-ROS.git dji_osdk_ros
+WORKDIR /home/dji/Onboard-SDK
+RUN mkdir build && cd build && \
+    cmake .. && make -j4 && sudo make install
+
 WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 

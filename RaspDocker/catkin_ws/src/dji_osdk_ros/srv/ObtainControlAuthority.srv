@@ -1,5 +1,0 @@
-#request
-bool enable_obtain
----
-#reponse
-bool result
