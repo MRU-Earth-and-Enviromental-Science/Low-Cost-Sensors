@@ -65,8 +65,6 @@ RUN usermod -aG dialout dji
 
 COPY catkin_ws /home/dji/catkin_ws
 
-RUN mv /home/dji/catkin_ws/src/dji_sdk /home/dji/catkin_ws/src/dji_osdk_ros
-
 RUN chown -R dji:dji /home/dji/catkin_ws
 
 WORKDIR /home/dji/catkin_ws

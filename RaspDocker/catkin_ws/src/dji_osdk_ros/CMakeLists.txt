@@ -281,7 +281,7 @@ add_subdirectory(src)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/onboard-sdk-ros_node.cpp)
+add_executable(${PROJECT_NAME}_node src/dji_osdk_ros/dji_vehicle_node.cpp)
 #add_executable(dji_vehicle_node src/dji_vehicle_node.cc)
 
 ## Rename C++ executable without prefix
@@ -296,9 +296,9 @@ add_subdirectory(src)
 #add_dependencies(dji_sdk_node
 #                 dji_sdk_generate_messages_cpp)
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(${PROJECT_NAME}_node
+   ${catkin_LIBRARIES}
+ )
 # target_link_libraries(dji_vehicle_node
 #   ${catkin_LIBRARIES}
 #   ${DJIOSDK_LIBRARIES}
@@ -320,9 +320,9 @@ add_subdirectory(src)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS ${PROJECT_NAME}_node
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
