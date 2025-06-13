@@ -1,191 +1,135 @@
-#include <termios.h>
 #include <fcntl.h>
+#include <termios.h>
 #include <unistd.h>
-#include <sys/poll.h>
-#include <cstring>
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <regex>
+#include <cstdint>
 
-constexpr char IN_PORT[] = "/dev/ttyUSB0";
-constexpr char OUT_PORT[] = "/dev/ttyAMA0";
+const char *IN_PORT = "/dev/ttyUSB0";
+const char *OUT_PORT = "/dev/ttyAMA0";
 constexpr speed_t BAUD = B115200;
-constexpr int TIMEOUT_MS = 1000;
 
-class SerialPort
-{
-public:
-    SerialPort() : fd_(-1) {}
-    ~SerialPort()
-    {
-        if (fd_ != -1)
-            close(fd_);
-    }
-
-    bool openPort(const char *path, speed_t baud)
-    {
-        fd_ = open(path, O_RDWR | O_NOCTTY | O_NONBLOCK);
-        if (fd_ == -1)
-        {
-            perror(path);
-            return false;
-        }
-        termios tty{};
-        if (tcgetattr(fd_, &tty) != 0)
-        {
-            perror("tcgetattr");
-            return false;
-        }
-        cfmakeraw(&tty);
-        cfsetispeed(&tty, baud);
-        cfsetospeed(&tty, baud);
-        tty.c_cflag |= (CLOCAL | CREAD);
-        tty.c_cflag &= ~CRTSCTS; // no HW flow-control
-        tty.c_cc[VTIME] = 0;
-        tty.c_cc[VMIN] = 1;
-        if (tcsetattr(fd_, TCSANOW, &tty) != 0)
-        {
-            perror("tcsetattr");
-            return false;
-        }
-        return true;
-    }
-
-    ssize_t readByte(char &c) { return ::read(fd_, &c, 1); }
-    ssize_t writeData(const std::string &s)
-    {
-        return ::write(fd_, s.data(), s.size());
-    }
-
-private:
-    int fd_;
-};
-
-uint8_t hex2byte(const std::string &hx)
-{
-    return static_cast<uint8_t>(std::strtoul(hx.c_str(), nullptr, 16));
-}
-
-bool validChecksum(const std::string &nmea)
-{
-    auto star = nmea.find('*');
-    if (star == std::string::npos || star + 3 > nmea.size())
-        return false;
-    uint8_t given = hex2byte(nmea.substr(star + 1, 2));
-
-    uint8_t calc = 0;
-    for (size_t i = 1; i < star; ++i) // XOR from char after $ until '*'
-        calc ^= static_cast<uint8_t>(nmea[i]);
-
-    return calc == given;
-}
-
-double dm2deg(const std::string &dm, const std::string &hemisphere)
+double parseCoord(const std::string &dm, const std::string &hemi)
 {
     if (dm.empty())
         return 0.0;
     double val = std::stod(dm);
-    int degs = static_cast<int>(val / 100);
-    double mins = val - (degs * 100);
-    double dec = degs + mins / 60.0;
-    if (hemisphere == "S" || hemisphere == "W")
-        dec = -dec;
-    return dec;
+    int deg = int(val / 100);
+    double min = val - deg * 100;
+    double dec = deg + min / 60.0;
+    return (hemi == "S" || hemi == "W") ? -dec : dec;
 }
 
-struct Fix
+bool hasValidChecksum(const std::string &sentence)
 {
-    std::string time_hms;
-    double latitude = 0.0;
-    double longitude = 0.0;
-};
-
-bool parseGPRMC(const std::string &line, Fix &fix)
-{
-    if (line.rfind("$GPRMC,", 0) != 0)
+    auto star = sentence.find('*');
+    if (star == std::string::npos || star + 2 >= sentence.size())
         return false;
-    if (!validChecksum(line))
-        return false;
-
-    std::vector<std::string> f;
-    std::stringstream ss(line);
-    std::string token;
-    while (std::getline(ss, token, ','))
-        f.push_back(token);
-    if (f.size() < 7)
-        return false;
-
-    const std::string &status = f[2];
-    if (status != "A")
-        return false;
-
-    const std::string &t = f[1];
-    if (t.size() < 6)
-        return false;
-    fix.time_hms = t.substr(0, 2) + ":" + t.substr(2, 2) + ":" + t.substr(4, 2);
-
-    fix.latitude = dm2deg(f[3], f[4]);
-    fix.longitude = dm2deg(f[5], f[6]);
-
-    return true;
+    uint8_t expected = std::strtoul(sentence.substr(star + 1, 2).c_str(), nullptr, 16);
+    uint8_t actual = 0;
+    for (size_t i = 1; i < star; ++i)
+        actual ^= sentence[i];
+    return expected == actual;
 }
 
 int main()
 {
-    SerialPort in, out;
-    if (!in.openPort(IN_PORT, BAUD) ||
-        !out.openPort(OUT_PORT, BAUD))
+    int in_fd = open(IN_PORT, O_RDONLY | O_NOCTTY);
+    if (in_fd < 0)
     {
-        std::cerr << "Failed to open serial ports.\n";
+        perror("open input");
         return 1;
     }
-    std::cout << "Listening on " << IN_PORT
-              << " and forwarding clean GPRMC sentences to "
-              << OUT_PORT << std::endl;
 
-    std::string currentLine;
-    pollfd pfd{.fd = 0, .events = 0};
+    termios tty{};
+    tcgetattr(in_fd, &tty);
+    cfmakeraw(&tty);
+    cfsetspeed(&tty, BAUD);
+    tcsetattr(in_fd, TCSANOW, &tty);
 
-    while (true)
+    int out_fd = open(OUT_PORT, O_WRONLY | O_NOCTTY);
+    if (out_fd < 0)
     {
-        char c;
-        if (in.readByte(c) == 1)
-        {
-            if (c == '\r')
-                continue; // ignore CR
-            if (c == '\n')
-            {
-                if (!currentLine.empty())
-                {
-                    Fix fix;
-                    if (parseGPRMC(currentLine, fix))
-                    {
-                        // Forward full line with CRLF
-                        out.writeData(currentLine + "\r\n");
+        std::cerr << "⚠️  Warning: can't open " << OUT_PORT << " (continuing without forwarding)\n";
+    }
+    else
+    {
+        termios tty_out{};
+        tcgetattr(out_fd, &tty_out);
+        cfmakeraw(&tty_out);
+        cfsetspeed(&tty_out, BAUD);
+        tcsetattr(out_fd, TCSANOW, &tty_out);
+    }
 
-                        // Show parsed data
-                        std::cout << std::fixed << std::setprecision(6);
-                        std::cout << "[" << fix.time_hms << "]  "
-                                  << "Lat: " << fix.latitude
-                                  << "  Lon: " << fix.longitude
-                                  << std::endl;
+    std::string buffer;
+    char c;
+
+    std::regex gprmc_pattern(R"(\$GPRMC,[^*]*\*[0-9A-Fa-f]{2})");
+
+    while (read(in_fd, &c, 1) == 1)
+    {
+        if (isprint(c))
+        {
+            buffer += c;
+        }
+        else if (c == '\n' || c == '\r')
+        {
+            std::smatch match;
+            if (std::regex_search(buffer, match, gprmc_pattern))
+            {
+                std::string gprmc = match.str();
+
+                if (out_fd >= 0)
+                {
+                    std::string toSend = gprmc + "\r\n";
+                    write(out_fd, toSend.c_str(), toSend.size());
+                }
+
+                if (hasValidChecksum(gprmc))
+                {
+                    std::stringstream ss(gprmc);
+                    std::string field;
+                    std::vector<std::string> f;
+                    while (std::getline(ss, field, ','))
+                        f.push_back(field);
+
+                    if (f.size() > 6 && f[2] == "A")
+                    {
+                        std::string t = f[1];
+                        std::string lat = f[3], ns = f[4];
+                        std::string lon = f[5], ew = f[6];
+                        if (t.size() >= 6)
+                        {
+                            std::string time = t.substr(0, 2) + ":" + t.substr(2, 2) + ":" + t.substr(4, 2);
+                            double latitude = parseCoord(lat, ns);
+                            double longitude = parseCoord(lon, ew);
+                            std::cout << "✅ GPRMC " << time << " | Lat: " << latitude << " | Lon: " << longitude << std::endl;
+                        }
                     }
-                    currentLine.clear();
+                    else
+                    {
+                        std::cout << "⚠️  GPRMC (no fix): " << gprmc << std::endl;
+                    }
+                }
+                else
+                {
+                    std::cout << "❌ Checksum invalid: " << gprmc << std::endl;
                 }
             }
-            else
-            {
-                currentLine += c;
-                if (currentLine.size() > 120)
-                    currentLine.clear();
-            }
+
+            buffer.clear();
         }
-        else
-        {
-            usleep(1000);
-        }
+
+        if (buffer.length() > 300)
+            buffer.clear();
     }
+
+    if (in_fd >= 0)
+        close(in_fd);
+    if (out_fd >= 0)
+        close(out_fd);
     return 0;
 }
