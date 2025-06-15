@@ -16,6 +16,8 @@
 
 Plantower_PMS7003 pms7003;
 
+bool senderConnected = false;
+
 // I2C Protocol
 #define SDA_pin 21
 #define SCL_pin 22
@@ -24,7 +26,13 @@ Plantower_PMS7003 pms7003;
 Adafruit_SGP30 sgp;
 bool sgp_initialized = false;
 
-uint8_t broadcastAddress[] = {0x10, 0x06, 0x1C, 0xF2, 0x02, 0xCC};
+constexpr int RX_PIN = 4;
+constexpr int TX_PIN = 5;
+constexpr uint32_t BAUD_UART = 115200; // Pi → ESP32 link
+
+String lineBuffer;
+
+uint8_t broadcastAddress[] = {0x10, 0x06, 0x1C, 0xF2, 0x02, 0x50};
 
 typedef struct __attribute__((packed))
 {
@@ -38,14 +46,84 @@ typedef struct __attribute__((packed))
   uint16_t pm_1_0;  // done
   uint16_t pm_2_5;  // done
   uint16_t pm_10_0; // done
+  float lat;
+  float lon;
 } SensorData;
 
 SensorData sensorData;
+
+static double dmToDeg(const String &dm, char hemi)
+{
+  if (dm.length() < 4)
+    return 0.0;
+  double val = dm.toDouble();
+  int deg = int(val / 100);
+  double min = val - deg * 100;
+  double dec = deg + min / 60.0;
+  if (hemi == 'S' || hemi == 'W')
+    dec = -dec;
+  return dec;
+}
+
+void readPiData()
+{
+  while (Serial2.available())
+  {
+    char c = Serial2.read();
+
+    if (c == '\n' || c == '\r')
+    {
+      if (lineBuffer.length())
+      {
+        Serial.println("RAW: " + lineBuffer);
+
+        if (lineBuffer.startsWith("$GPRMC"))
+        {
+          int idx = 0;
+          String fields[12];
+          for (int i = 0; i < 12 && idx != -1; ++i)
+          {
+            int next = lineBuffer.indexOf(',', idx);
+            fields[i] = (next == -1) ? lineBuffer.substring(idx)
+                                     : lineBuffer.substring(idx, next);
+            idx = (next == -1) ? -1 : next + 1;
+          }
+
+          if (fields[2] == "A")
+          {
+            String latStr = fields[3];
+            char latHem = fields[4].charAt(0);
+            String lonStr = fields[5];
+            char lonHem = fields[6].charAt(0);
+
+            double lat = dmToDeg(latStr, latHem);
+            double lon = dmToDeg(lonStr, lonHem);
+
+            sensorData.lat = (float)lat;
+            sensorData.lon = (float)lon;
+
+            Serial.printf("✓ GPS  Lat: %.6f  Lon: %.6f\n", lat, lon);
+          }
+        }
+      }
+      lineBuffer = "";
+    }
+    else if (isPrintable(c))
+    {
+      lineBuffer += c;
+    }
+  }
+}
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
   Serial.print("ESP-NOW send status: ");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
+  if (!senderConnected && status == ESP_NOW_SEND_SUCCESS)
+  {
+    senderConnected = true;
+    oledPrint("ESP-NOW Connected");
+  }
 }
 
 void readSensors()
@@ -64,18 +142,17 @@ void readSensors()
   if (sgp_initialized && sgp.IAQmeasure())
     TVOC = sgp.TVOC;
 
-  sensorData = {
-    .temp : t,
-    .humid : h,
-    .ch4 : readMQ4(),
-    .nox : readMQ135(),
-    .co2 : (float)co2ppm,
-    .co : readMQ7(),
-    .tvoc : (float)TVOC,
-    .pm_1_0 : pms7003.getPM_1_0(),
-    .pm_2_5 : pms7003.getPM_2_5(),
-    .pm_10_0 : pms7003.getPM_10_0()
-  };
+  sensorData.temp = t;
+  sensorData.humid = h;
+  sensorData.ch4 = readMQ4();
+  sensorData.nox = readMQ135();
+  sensorData.co2 = (float)co2ppm;
+  sensorData.co = readMQ7();
+  sensorData.tvoc = (float)TVOC;
+  sensorData.pm_1_0 = pms7003.getPM_1_0();
+  sensorData.pm_2_5 = pms7003.getPM_2_5();
+  sensorData.pm_10_0 = pms7003.getPM_10_0();
+  // NOTE: GPS lat/lon fields are updated in readPiData() and preserved
 }
 
 void sendData()
@@ -122,6 +199,11 @@ void setup()
   Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
   Serial1.begin(9600, SERIAL_8N1, 4, -1);
 
+  delay(100);
+  Serial2.begin(BAUD_UART, SERIAL_8N1, RX_PIN, TX_PIN);
+  Serial.printf("UART2 listening on GPIO %d (RX) @ %lu baud\n",
+                RX_PIN, BAUD_UART);
+
   if (!pms7003.init(&Serial1))
     oledPrint("PMS FAIL");
 
@@ -153,6 +235,7 @@ void setup()
 
 void loop()
 {
+  readPiData(); // ◀─ keep GPS buffer fresh
   static unsigned long lastSend = 0;
   if (millis() - lastSend > 10000)
   {

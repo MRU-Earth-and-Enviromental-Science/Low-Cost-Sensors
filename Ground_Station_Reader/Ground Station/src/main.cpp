@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_now.h>
-#include <WebServer.h>
 #include <Wire.h>
 #include "../include/dashboard.h"
 
@@ -21,55 +20,25 @@ typedef struct __attribute__((packed))
   uint16_t pm_1_0;
   uint16_t pm_2_5;
   uint16_t pm_10_0;
+  float lat;
+  float lon;
 } SensorData;
 
 SensorData latestData;
 bool logging_enabled = false;
 
-WebServer server(80);
-
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
-  if (!logging_enabled || len != sizeof(SensorData))
+  if (len != sizeof(SensorData))
     return;
   memcpy(&latestData, incomingData, sizeof(SensorData));
-  Serial.println("[ESP-NOW] Data received.");
-}
-
-void handleRoot()
-{
-  server.send(200, "text/html", htmlPage);
-}
-
-void handleData()
-{
-  String json = "{";
-  json += "\"temperature\":" + String(latestData.temp, 2) + ",";
-  json += "\"humidity\":" + String(latestData.humid, 2) + ",";
-  json += "\"ch4_ppm\":" + String(latestData.ch4, 2) + ",";
-  json += "\"co2_ppm\":" + String(latestData.co2, 2) + ",";
-  json += "\"tvoc_ppb\":" + String(latestData.tvoc, 2) + ",";
-  json += "\"co_ppm\":" + String(latestData.co, 2) + ",";
-  json += "\"nox_ppm\":" + String(latestData.nox, 2) + ",";
-  json += "\"pm_1_0\":" + String(latestData.pm_1_0) + ",";
-  json += "\"pm_2_5\":" + String(latestData.pm_2_5) + ",";
-  json += "\"pm_10_0\":" + String(latestData.pm_10_0);
-  json += "}";
-  server.send(200, "application/json", json);
-}
-
-void handleStart()
-{
-  logging_enabled = true;
-  Serial.println("[HTTP] Logging started.");
-  server.send(200, "text/plain", "started");
-}
-
-void handleStop()
-{
-  logging_enabled = false;
-  Serial.println("[HTTP] Logging stopped.");
-  server.send(200, "text/plain", "stopped");
+  Serial.println("[ESP-NOW] Data received:");
+  Serial.printf("Temp: %.2f, Humid: %.2f, CH4: %.2f, CO2: %.2f, TVOC: %.2f, CO: %.2f, NOx: %.2f\n",
+                latestData.temp, latestData.humid, latestData.ch4, latestData.co2,
+                latestData.tvoc, latestData.co, latestData.nox);
+  Serial.printf("PM1.0: %d, PM2.5: %d, PM10.0: %d\n",
+                latestData.pm_1_0, latestData.pm_2_5, latestData.pm_10_0);
+  Serial.printf("Lat: %.6f, Lon: %.6f\n", latestData.lat, latestData.lon);
 }
 
 void setup()
@@ -87,16 +56,9 @@ void setup()
     return;
   }
   esp_now_register_recv_cb(OnDataRecv);
-
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/data", HTTP_GET, handleData);
-  server.on("/start", HTTP_GET, handleStart);
-  server.on("/stop", HTTP_GET, handleStop);
-  server.begin();
-  Serial.println("[HTTP] Web server started");
+  Serial.println("ESP-NOW started");
 }
 
 void loop()
 {
-  server.handleClient();
 }
