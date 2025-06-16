@@ -54,7 +54,7 @@ const char *htmlPage = R"rawliteral(
 
         .dashboard-container {
             width: 100%;
-            max-width: 850px;
+            max-width: 1200px;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
@@ -94,24 +94,84 @@ const char *htmlPage = R"rawliteral(
             box-shadow: var(--shadow-sm);
         }
 
-        .log {
-            width: 120%;
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .table-container {
+            width: 100%;
             background: var(--bg-secondary);
             border-radius: var(--border-radius);
-            padding: 1.25rem;
             box-shadow: var(--shadow-md);
-            height: 350px;
-            overflow-y: auto;
-            white-space: pre-line;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
-            color: var(--text-secondary);
+            height: 400px;
+            overflow: auto;
             border: 1px solid #333;
             transition: box-shadow 0.3s ease;
         }
 
-        .log:hover {
+        .table-container:hover {
             box-shadow: var(--shadow-lg);
+        }
+
+        .status-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            z-index: 10;
+        }
+
+        th {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid #333;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        th:last-child {
+            border-right: none;
+        }
+
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #222;
+            border-right: 1px solid #222;
+            color: var(--text-secondary);
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tbody tr:hover {
+            background-color: #111;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #0a0a0a;
         }
 
         .footer {
@@ -120,7 +180,7 @@ const char *htmlPage = R"rawliteral(
             color: var(--text-muted);
             text-align: center;
             width: 100%;
-            max-width: 850px;
+            max-width: 1200px;
             padding: 1rem;
             border-top: 1px solid #333;
         }
@@ -130,26 +190,41 @@ const char *htmlPage = R"rawliteral(
             font-weight: 600;
         }
 
-        /* Custom scrollbar */
-        .log::-webkit-scrollbar {
-            width: 8px;
+        .footer a {
+            color: #1e90ff;
+            text-decoration: none;
+            transition: color 0.2s ease;
         }
 
-        .log::-webkit-scrollbar-track {
+        .footer a:hover {
+            color: #4da6ff;
+        }
+
+        /* Custom scrollbar */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
             background: var(--bg-secondary);
             border-radius: var(--border-radius);
         }
 
-        .log::-webkit-scrollbar-thumb {
+        .table-container::-webkit-scrollbar-thumb {
             background: #444;
             border-radius: var(--border-radius);
         }
 
-        .log::-webkit-scrollbar-thumb:hover {
+        .table-container::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
 
-        @media (max-width: 600px) {
+        .table-container::-webkit-scrollbar-corner {
+            background: var(--bg-secondary);
+        }
+
+        @media (max-width: 768px) {
             body {
                 padding: 1rem;
             }
@@ -167,6 +242,16 @@ const char *htmlPage = R"rawliteral(
             button {
                 width: 100%;
             }
+
+            th,
+            td {
+                padding: 8px 4px;
+                font-size: 0.75rem;
+            }
+
+            .dashboard-container {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -176,12 +261,33 @@ const char *htmlPage = R"rawliteral(
 
     <div class="dashboard-container">
         <div class="controls">
-            <button onclick="startLogging()">Start</button>
-            <button onclick="stopLogging()">Stop</button>
+            <button onclick="startLogging()" id="startBtn">Start</button>
+            <button onclick="stopLogging()" id="stopBtn" disabled>Stop</button>
             <button onclick="downloadCSV()">Download CSV</button>
         </div>
 
-        <div class="log" id="logDisplay">Waiting for data...</div>
+        <div class="table-container" id="tableContainer">
+            <div class="status-message" id="statusMessage">Waiting for data...</div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Temp (°C)</th>
+                        <th>Humidity (%)</th>
+                        <th>CH₄ (ppm)</th>
+                        <th>CO₂ (ppm)</th>
+                        <th>TVOC (ppb)</th>
+                        <th>CO (ppm)</th>
+                        <th>NOx (ppm)</th>
+                        <th>PM1.0 (μg/m³)</th>
+                        <th>PM2.5 (μg/m³)</th>
+                        <th>PM10.0 (μg/m³)</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="footer" style="padding:20px;">
@@ -201,12 +307,19 @@ const char *htmlPage = R"rawliteral(
         let logging = false;
         let pollTimeout;
         let dataLog = [["Timestamp", "Temperature", "Humidity", "CH4", "CO2", "TVOC", "CO", "NOx", "PM1.0", "PM2.5", "PM10.0"]];
-        const display = document.getElementById("logDisplay");
+        const statusMessage = document.getElementById("statusMessage");
+        const dataTable = document.getElementById("dataTable");
+        const dataTableBody = document.getElementById("dataTableBody");
+        const tableContainer = document.getElementById("tableContainer");
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
 
         function startLogging() {
             if (!logging) {
                 logging = true;
-                display.textContent = "Starting data collection...\n";
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                statusMessage.textContent = "Starting data collection...";
                 poll();
             }
         }
@@ -214,8 +327,12 @@ const char *htmlPage = R"rawliteral(
         function stopLogging() {
             if (logging) {
                 logging = false;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
                 clearTimeout(pollTimeout);
-                display.textContent += "\nData collection stopped.\n";
+                statusMessage.textContent = "Data collection stopped.";
+                statusMessage.style.display = "flex";
+                dataTable.style.display = "none";
             }
         }
 
@@ -227,13 +344,50 @@ const char *htmlPage = R"rawliteral(
             a.href = url;
             a.download = "esp32_log_" + new Date().toISOString().slice(0, 10) + ".csv";
             a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function addDataRow(data) {
+            const row = document.createElement("tr");
+            const now = new Date().toLocaleTimeString();
+
+            row.innerHTML = `
+                <td>${now}</td>
+                <td>${data.temperature}</td>
+                <td>${data.humidity}</td>
+                <td>${data.ch4_ppm}</td>
+                <td>${data.co2_ppm}</td>
+                <td>${data.tvoc_ppb}</td>
+                <td>${data.co_ppm}</td>
+                <td>${data.nox_ppm}</td>
+                <td>${data.pm_1_0}</td>
+                <td>${data.pm_2_5}</td>
+                <td>${data.pm_10_0}</td>
+            `;
+
+            dataTableBody.appendChild(row);
+
+            // Keep only last 50 rows for performance
+            if (dataTableBody.children.length > 50) {
+                dataTableBody.removeChild(dataTableBody.firstChild);
+            }
+
+            // Auto scroll to bottom
+            tableContainer.scrollTop = tableContainer.scrollHeight;
         }
 
         function poll() {
             if (!logging) return;
+
             fetch("/data")
                 .then(res => res.json())
                 .then(data => {
+                    // Hide status message and show table on first data
+                    if (statusMessage.style.display !== "none") {
+                        statusMessage.style.display = "none";
+                        dataTable.style.display = "table";
+                    }
+
                     const now = new Date().toLocaleTimeString();
                     const row = [
                         now,
@@ -249,13 +403,15 @@ const char *htmlPage = R"rawliteral(
                         data.pm_10_0
                     ];
                     dataLog.push(row);
-                    display.innerHTML += `<br>${now} | T=${data.temperature}°C | H=${data.humidity}% | CH₄=${data.ch4_ppm}ppm | CO₂=${data.co2_ppm}ppm | TVOC=${data.tvoc_ppb}ppb | CO=${data.co_ppm}ppm | NOx=${data.nox_ppm}ppm | PM1.0=${data.pm_1_0}ug/m³ | PM2.5=${data.pm_2_5}ug/m³ | PM10.0=${data.pm_10_0}ug/m³`;
-                    display.scrollTop = display.scrollHeight;
+                    addDataRow(data);
                 })
                 .catch(err => {
                     console.error("Fetch error:", err);
-                    display.textContent += "\nError fetching data. Retrying...";
+                    statusMessage.textContent = "Error fetching data. Retrying...";
+                    statusMessage.style.display = "flex";
+                    dataTable.style.display = "none";
                 });
+
             pollTimeout = setTimeout(poll, 1000);
         }
     </script>
@@ -264,4 +420,4 @@ const char *htmlPage = R"rawliteral(
 </html>
 )rawliteral";
 
-#endif // DASHBOARD_H
+#endif

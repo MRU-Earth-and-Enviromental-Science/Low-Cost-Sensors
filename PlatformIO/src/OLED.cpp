@@ -63,7 +63,7 @@ void initOLED()
     display.fillTriangle(64, 20, 80, 20, 80, 8, SH110X_WHITE); // Right triangle
 
     display.display();
-    delay(6000);
+    delay(2000);
     display.clearDisplay();
 
     auto slideText = [](const String &text)

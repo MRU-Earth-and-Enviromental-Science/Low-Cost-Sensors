@@ -4,5 +4,5 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/extensions.json
-RaspDocker/.env
-.DS_Store
+.vscode/settings.json
+.vscode/tasks.json

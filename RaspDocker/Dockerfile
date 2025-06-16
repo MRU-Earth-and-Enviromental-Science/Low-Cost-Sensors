@@ -81,6 +81,8 @@ WORKDIR /home/dji
 RUN echo "source /opt/ros/noetic/setup.bash" >> /home/dji/.bashrc
 RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
+COPY .env /home/dji/.env
+
 COPY run.sh /home/dji/run.sh
 RUN chmod +x /home/dji/run.sh && chown dji:dji /home/dji/run.sh
 

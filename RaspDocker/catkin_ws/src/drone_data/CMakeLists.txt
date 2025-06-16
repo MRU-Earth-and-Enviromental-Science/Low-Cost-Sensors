@@ -3,6 +3,7 @@ project(drone_data)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  sensor_msgs
   std_msgs
 )
 
