@@ -20,6 +20,8 @@ RUN apt update && apt install -y --no-install-recommends \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y libsdl2-dev
+
 # ROS Noetic Dependencies
 RUN apt-get update && apt-get install -y \
     curl \
@@ -43,6 +45,12 @@ RUN apt-get update && apt-get install -y \
     ros-noetic-roslaunch \
     ros-noetic-roscpp \
     ros-noetic-std-msgs \
+    ros-noetic-nmea-msgs \
+    ros-noetic-sensor-msgs \
+    ros-noetic-geometry-msgs \
+    ros-noetic-nav-msgs \
+    ros-noetic-tf \
+    ros-noetic-message-generation \
     python3-rosdep \
     python3-rosinstall \
     python3-rosinstall-generator \
@@ -50,37 +58,33 @@ RUN apt-get update && apt-get install -y \
     python3-catkin-tools \
     build-essential
 
-# Initialize rosdep (safe fallback for Docker)
 RUN sudo rosdep init || true && rosdep update || true
 
 RUN useradd -m -s /bin/bash dji && echo "dji ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
 RUN usermod -aG dialout dji
 
-# Copy your edited Onboard-SDK source into the container
-COPY Onboard-SDK /home/dji/Onboard-SDK
-
-RUN chown -R dji:dji /home/dji/Onboard-SDK
-
-#catkin setup
 COPY catkin_ws /home/dji/catkin_ws
+
 RUN chown -R dji:dji /home/dji/catkin_ws
 
-WORKDIR /home/dji
-
-# Source ROS in bash
-RUN echo "source /opt/ros/noetic/setup.bash" >> /home/dji/.bashrc
+RUN git clone --recurse-submodules https://github.com/dji-sdk/Onboard-SDK-ROS.git /home/dji/catkin_ws/src/dji_osdk_ros
+RUN git clone https://github.com/shivam-2507/Onboard-SDK.git /home/dji/Onboard-SDK
 
 WORKDIR /home/dji/Onboard-SDK
-RUN mkdir build && cd build && cmake .. -DADVANCED_SENSING=OFF && make -j1
+RUN mkdir build && cd build && \
+    cmake .. && make -j4 && sudo make install
 
 WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
+
+WORKDIR /home/dji
+RUN echo "source /opt/ros/noetic/setup.bash" >> /home/dji/.bashrc
 RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 
 COPY .env /home/dji/.env
 
 COPY run.sh /home/dji/run.sh
 RUN chmod +x /home/dji/run.sh && chown dji:dji /home/dji/run.sh
+
 USER dji
 ENTRYPOINT ["/home/dji/run.sh"]
