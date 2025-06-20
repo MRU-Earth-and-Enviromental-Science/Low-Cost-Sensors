@@ -4,8 +4,6 @@
 #include <Wire.h>
 #include "../include/dashboard.h"
 
-const char *ssid = "Air-Quality-Station";
-const char *password = "Neon_2017";
 const int channel = 1;
 
 typedef struct __attribute__((packed))
