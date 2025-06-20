@@ -37,13 +37,15 @@ bool hasValidChecksum(const std::string &sentence)
 
 int main()
 {
+    std::cout << "Ready";
+    std::cout.flush();
     int in_fd = open(IN_PORT, O_RDONLY | O_NOCTTY);
     if (in_fd < 0)
     {
         perror("open input");
         return 1;
     }
-
+    std::cout << "Setup Complete";
     termios tty{};
     tcgetattr(in_fd, &tty);
     cfmakeraw(&tty);

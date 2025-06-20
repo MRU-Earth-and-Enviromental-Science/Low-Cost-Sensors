@@ -1,0 +1,12 @@
+[Unit]
+Description=Run script on boot
+After=network.target
+
+[Service]
+ExecStart=/home/shivam/Desktop/Low-Costs-Sensors-Gas/parser/runOnBoot.sh
+Restart=always
+User=shivam
+Enviroment=DISPLAY=:0
+
+[Install]
+WantedBy=multi-user.target
