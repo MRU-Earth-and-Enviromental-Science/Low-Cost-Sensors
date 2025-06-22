@@ -5,5 +5,5 @@
 	path = RaspDocker/Onboard-SDK-ROS
 	url = git@github.com:shivam-2507/Onboard-SDK-ROS.git
 [submodule "Sensor-Dashboard"]
-	path = Ground_Station_Reader
+	path = Ground_Station_Reader/sensor-dashboard
 	url = git@github.com:MRU-Earth-and-Enviromental-Science/sensor-dashboard.git
