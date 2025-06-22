@@ -99,27 +99,48 @@ sudo docker run hello-world
 ## 📁 Project Structure
 
 ```
-/GroundStationReader/               # Receives ESP-NOW data and handles web upload
-  ├── main.py                       # Python script for ESP-NOW data reception and API push
-  └── web_app/                      # Web dashboard (HTML/CSS/JS)
 
-/PlatformIO/                        # ESP32 firmware (sensor reading + ESP-NOW transmission)
-  ├── src/                          # Source files for sensor logic and communication
-  ├── include/                      # Header files for modular components
-  └── platformio.ini                # PlatformIO config for board, libraries, etc.
+/Docker/                            # Docker-based ROS environment
+  ├── catkin_ws/                    # ROS workspace
+  ├── .dockerignore
+  ├── .env
+  ├── dockerCommands.sh
+  ├── Dockerfile
+  ├── openNode.sh
+  ├── run.sh
+  └── UserConfig.txt
 
-/RaspDocker/                        # Dockerized ROS Noetic + DJI OSDK (runs on Raspberry Pi)
-  ├── OnboardSDK/                   # DJI Onboard SDK (git submodule)
-  ├── catkin_ws/
-  │   └── src/drone_data/           # Custom ROS package
-  │       ├── src/                  # ROS node source code
-  │       ├── CMakeLists.txt
-  │       └── package.xml
-  ├── Dockerfile                    # Builds ROS container with DJI SDK
-  └── run.sh                        # Launches ROS node and UART communication
+/Drone_System/                      # ESP32 firmware for sensor readings
+  ├── .pio/
+  ├── .vscode/
+  ├── include/
+  ├── lib/
+  ├── src/
+  ├── test/
+  ├── .gitignore
+  └── platformio.ini
+
+/Ground_Station_Reader/            # Ground station receiver and dashboard
+  └── Ground Station/
+      ├── .pio/
+      ├── .vscode/
+      ├── include/
+      ├── lib/
+      ├── src/
+      ├── test/
+      ├── .gitattributes
+      ├── .gitignore
+      └── platformio.ini
+
+/Parser_Pi/                         # Raspberry Pi GPS parser
+  ├── src/
+  ├── CMakeLists.txt
+  ├── runOnBoot.sh
+  ├── .gitignore
+  ├── .gitmodules
+  └── README.md
 
 README.md                           # Project documentation
-LICENSE                             # MIT License
 ```
 ---
 
