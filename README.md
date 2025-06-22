@@ -31,10 +31,11 @@ This system integrates:
 - Familiarity with terminal and basic Linux commands
 - Recommended: Linux host (Windows/Mac supported but requires extra configuration)
 - **Required Tools**
-  - [Docker](https://www.docker.com/get-started/) (for running ROS & DJI SDK in containers)
+  - C++ Complier
   - [VSCode](https://code.visualstudio.com/)
   - [Platform IO Extension](https://platformio.org/install/ide?install=vscode) for VSCode
   - (Optional) Install [PlatformIO Core CLI](https://docs.platformio.org/en/latest/core/quickstart.html) for terminal-only workflows
+  - [Optional](https://www.docker.com/get-started/) (for running ROS & DJI SDK in containers, currently not required, for future updates)
     
 ### 2. Clone the Repository
 ```bash
@@ -45,7 +46,10 @@ code . # Open in VSCode
 ### 3. Upload Code to ESP32
 
 - Connect your **ESP32 dev board** via USB.  
-- Open the project folder in **Visual Studio Code**.  
+- Open the Drone_System Directory on **Visual Studio Code**.
+```bash
+cd path-to-directory/Low-Costs-Sensors-Gas/Drone_System
+``` 
 - Use PlatformIO to build and upload:  
   - Click the right-facing arrow (➤) at the bottom of VSCode, or  
   - Use the command palette: `PlatformIO: Upload`  
@@ -53,7 +57,27 @@ code . # Open in VSCode
 > PlatformIO will automatically detect your environment and upload the firmware to the board.
 
 ### 4. Raspberry Pi Set-Up
-- stuff stuff stuff here (later)
+- Running any modern Linux Distro (This was developed on Ubuntu 24.04)
+- Setup Docker Daemon (if wanting to use DJI OSDK)
+```bash
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo docker run hello-world
+
+```
+- clone this repo
+- compile main.cpp
+- make it run on boot
 ---
 
 ## 🧰 Hardware Used
