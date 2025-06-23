@@ -10,6 +10,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -pedantic)
 endif()
 
-add_executable(gps_forwarder
-        src/gps_forwarder.cpp
+add_executable(main
+        src/main.cpp
 )

@@ -1,11 +1,11 @@
 [Unit]
-Description=Run my CMake-built C++ Program at Boot
+Description=GPS Forwarder for Drone to Pi
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/my_program
+ExecStart=/usr/local/bin/main
 Restart=on-failure
-User=YOUR_USERNAME
+User=shivam
 
 [Install]
 WantedBy=multi-user.target
