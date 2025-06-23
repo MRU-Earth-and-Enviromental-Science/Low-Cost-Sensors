@@ -1,3 +1,0 @@
-/home/shivam/Desktop/Low-Costs-Sensors-Gas/Parser_Pi/build/CMakeFiles/main.dir
-/home/shivam/Desktop/Low-Costs-Sensors-Gas/Parser_Pi/build/CMakeFiles/edit_cache.dir
-/home/shivam/Desktop/Low-Costs-Sensors-Gas/Parser_Pi/build/CMakeFiles/rebuild_cache.dir
