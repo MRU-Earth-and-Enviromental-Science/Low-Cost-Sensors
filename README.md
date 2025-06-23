@@ -9,6 +9,8 @@ This system integrates:
 -  A web dashboard for live monitoring and CSV export
 
 ---
+![License](https://img.shields.io/github/license/yourusername/Low-Costs-Sensors-Gas)
+![PlatformIO](https://img.shields.io/badge/PlatformIO-compatible-orange)
 
 ## 🚀 Features
 - Real-time measurements of:
@@ -28,22 +30,25 @@ This system integrates:
 ## 🛠️ Getting Started (Software)
 
 ### 1. Prerequisites
-- Familiarity with terminal and basic Linux commands
+- Familiarity with terminal and basic UNIX commands
 - Recommended: Linux host (Windows/Mac supported but requires extra configuration)
 - **Required Tools**
-  - C++ Complier
+  - C++ Compiler
+    - Linux: `sudo apt install build-essential`
+    - Windows: Install [MinGW](https://www.mingw-w64.org/) or use WSL
+    - Mac: Xcode Command Line Tools (`xcode-select --install`)
   - [VSCode](https://code.visualstudio.com/)
   - [Platform IO Extension](https://platformio.org/install/ide?install=vscode) for VSCode
-  - (Optional) Install [PlatformIO Core CLI](https://docs.platformio.org/en/latest/core/quickstart.html) for terminal-only workflows
-  - [Optional](https://www.docker.com/get-started/) (for running ROS & DJI SDK in containers, currently not required, for future updates)
+  - [Optional] Install [PlatformIO Core CLI](https://docs.platformio.org/en/latest/core/quickstart.html) for terminal-only workflows
+  - [Optional] Docker (https://www.docker.com/get-started/) (for running ROS & DJI SDK in containers, currently not required, for future updates)
     
-### 2. Clone the Repository
+### 2. Clone the Repository on the Machine Used to Deploy to ESP32
 ```bash
 git clone https://github.com/yourusername/Low-Costs-Sensors-Gas.git
 cd Low-Costs-Sensors-Gas
-code . # Open in VSCode
+code . # Open in VSCode (or editor of your choice)
 ```
-### 3. Upload Code to ESP32
+### 3. Upload Code to ESP32 on the Drone
 
 - Connect your **ESP32 dev board** via USB.  
 - Open the Drone_System Directory on **Visual Studio Code**.
@@ -56,9 +61,26 @@ cd path-to-directory/Low-Costs-Sensors-Gas/Drone_System
 
 > PlatformIO will automatically detect your environment and upload the firmware to the board.
 
-### 4. Raspberry Pi Set-Up
+### 4. Configure the ESP32 on Ground Station
+```bash
+cd "path-to-directory/Low-Costs-Sensors-Gas/Ground_Station_Reader/Ground Station"
+```
+- Use PlatformIO to build and upload the code to the ESP32.
+
+### 5. Raspberry Pi Set-Up
 - Running any modern Linux Distro (This was developed on Ubuntu 24.04)
-- Setup Docker Daemon (if wanting to use DJI OSDK)
+- Clone this repo on the Pi
+```bash
+git clone https://github.com/yourusername/Low-Costs-Sensors-Gas.git
+cd path-to-directory/Low-Costs-Sensors-Gas/Parser_Pi
+```
+- Run install_service.sh script to make it run on boot
+```bash
+chmod +x install_service.sh
+./install_service.sh
+```
+
+- [Optional] Setup Docker Daemon (if wanting to use DJI OSDK)
 ```bash
 sudo apt-get update
 sudo apt-get install ca-certificates curl
@@ -73,13 +95,27 @@ echo \
 sudo apt-get update
 
 sudo docker run hello-world
-
 ```
-- clone this repo
-- compile main.cpp
-- make it run on boot
----
+### 6. Setting Up and Running the Dashboard
+- Install the Dashboard from the 'Releases Section' of the GitHub repo linked below for your system.
+  - For **Windows**: Download the `.exe` file.
+  - For **Mac**: Download the `.dmg` file.
+  - For **Linux**: Download the `.AppImage` file and make it executable:
+- Alternatively, you can clone the sensor-dashboard submodule and build from source (must have npm installed):
+```bash
+# Clone the sensor-dashboard submodule
+cd path-to-directory/Low-Costs-Sensors-Gas
+git submodule update --init --recursive
 
+cd Ground_Station_Reader/sensor-dashboard
+
+npm install --legacy-peer-deps
+npm run dev
+
+# in a new terminal, run the following command to start the dashboard
+npm run electron-dev
+```
+---
 ## 🧰 Hardware Used
 
 - **ESP32 Dev Module (WROVER-E based)**
@@ -89,30 +125,26 @@ sudo docker run hello-world
 - **Plantower PMS7003** (PM2.5 Sensor)
 - **SGP30** (VOC Sensor)
 - **DHT11 / DHT22** (Temperature & Humidity)
-- **Custom PCB** Ordered from JLC PCB
+- **UART to USB Cable** (Drone to Pi connection)
+- **Custom PCB** Ordered from JLC PCB (Found in Repo)
 
 ## Casing
-- STEP and STL Files avaliable
-
+- STEP and STL Files available
 ---
 
 ## 📁 Project Structure
-
 ```
 
-/Docker/                            # Docker-based ROS environment
-  ├── catkin_ws/                    # ROS workspace
+/Docker/                           # Docker-based ROS environment
+  ├── catkin_ws/                   # ROS workspace
   ├── .dockerignore
   ├── .env
   ├── dockerCommands.sh
   ├── Dockerfile
-  ├── openNode.sh
   ├── run.sh
   └── UserConfig.txt
 
-/Drone_System/                      # ESP32 firmware for sensor readings
-  ├── .pio/
-  ├── .vscode/
+/Drone_System/                     # ESP32 firmware for sensor readings
   ├── include/
   ├── lib/
   ├── src/
@@ -121,9 +153,8 @@ sudo docker run hello-world
   └── platformio.ini
 
 /Ground_Station_Reader/            # Ground station receiver and dashboard
+  ├── sensor-dashboard/            # Git submodule: web dashboard frontend: git@github.com:MRU-Earth-and-Enviromental-Science/sensor-dashboard.git
   └── Ground Station/
-      ├── .pio/
-      ├── .vscode/
       ├── include/
       ├── lib/
       ├── src/
@@ -132,15 +163,21 @@ sudo docker run hello-world
       ├── .gitignore
       └── platformio.ini
 
-/Parser_Pi/                         # Raspberry Pi GPS parser
+/Hardware/
+  └── Gerber Files.zip/            # Gerber files for PCB
+
+/Mechanical/
+  ├── STEP-Files/                  # 3D models for casing
+  └── STL-Files/                   # STEP files for custom casing
+
+/Parser_Pi/                        # Raspberry Pi GPS parser
   ├── src/
   ├── CMakeLists.txt
-  ├── runOnBoot.sh
-  ├── .gitignore
-  ├── .gitmodules
-  └── README.md
-
-README.md                           # Project documentation
+  └── runOnBoot.sh
+  
+ .gitignore
+ .gitmodules
+ README.md
 ```
 ---
 

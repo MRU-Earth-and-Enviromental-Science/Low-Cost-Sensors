@@ -1,5 +1,5 @@
-app_id: 1163880
-app_key: 559e776a2a67e8e2e0f015842813272eed634a81a0df29cd25d364ea04738303
+app_id: import from env
+app_key: import from env
 device: /dev/ttyUSB0
 bauderate: 115200
 acm_port: /dev/ttyACM0
