@@ -48,13 +48,13 @@ This system integrates:
     
 ### 2. Clone the Repository on the Machine Used to Deploy to ESP32
 ```bash
-git clone https://github.com/yourusername/Low-Costs-Sensors-Gas.git
+git clone https://github.com/MRU-Earth-and-Enviromental-Science/Low-Costs-Sensors-Gas.git
 cd Low-Costs-Sensors-Gas
 code . # Open in VSCode (or editor of your choice)
 ```
 ### 3. Upload Code to ESP32 on the Drone
 
-- Connect your **ESP32 dev board** via USB.  
+- Connect your **ESP32 dev board** via USB.
 - Open the Drone_System Directory on **Visual Studio Code**.
 ```bash
 cd path-to-directory/Low-Costs-Sensors-Gas/Drone_System
@@ -80,8 +80,8 @@ cd path-to-directory/Low-Costs-Sensors-Gas/Parser_Pi
 ```
 - Run install_service.sh script to make it run on boot
 ```bash
-chmod +x install_service.sh
-./install_service.sh
+chmod +x installService.sh
+./installService.sh
 ```
 
 - [Optional] Setup Docker Daemon (if wanting to use DJI OSDK)
@@ -193,6 +193,6 @@ This project is licensed under the **MIT License**.
 
 [Mount Royal University, Faculty of Science and Technology, Department of Earth and Environmental Science](https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm)
 
-[Gwen O'Sullivan](mailto:INSERT_GWEN_EMAIL) — Vice Dean of Science and Technology @ MRU  
+[Gwen O'Sullivan](mailto:INSERT_GWEN_EMAIL) — Vice Dean of Science and Technology @ MRU
 [Shivam Walia](mailto:shivamwalia2006@gmail.com) — Mechatronics Engineering @ UWaterloo
 

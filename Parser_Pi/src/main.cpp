@@ -10,6 +10,7 @@
 #include <chrono>
 #include <thread>
 
+
 const char *IN_PORT = "/dev/ttyUSB0";
 const char *OUT_PORT = "/dev/ttyAMA0";
 constexpr speed_t BAUD = B115200;

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "[INFO] Building project..."
+echo "[INFO] Building project using CMake..."
 mkdir -p build && cd build
 cmake ..
 make
