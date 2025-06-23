@@ -4,13 +4,17 @@ An air quality monitoring system designed for DJI Matrice drones, capable of mea
 
 This system integrates:
 - An ESP32 for real-time sensor data acquisition
-- A Raspberry Pi running ROS Noetic and DJI Onboard SDK
 - ESP-NOW for wireless transmission to a ground station
--  A web dashboard for live monitoring and CSV export
+- A web dashboard for live monitoring and CSV export
+- Raspberry Pi running ROS Noetic and DJI Onboard SDK (coming soon)
 
 ---
-![License](https://img.shields.io/github/license/yourusername/Low-Costs-Sensors-Gas)
-![PlatformIO](https://img.shields.io/badge/PlatformIO-compatible-orange)
+![License](https://img.shields.io/badge/License-MIT-000000?style=for-the-badge&logo=openaccess&logoColor=white)
+![PlatformIO](https://img.shields.io/badge/PlatformIO-000000?style=for-the-badge&logo=platformio&logoColor=white)
+![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-000000?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![DJI](https://img.shields.io/badge/DJI-000000?style=for-the-badge&logo=dji&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=white)
 
 ## 🚀 Features
 - Real-time measurements of:
@@ -22,7 +26,7 @@ This system integrates:
   - Temperature (°C) and Humidity (%)
 - Web-based dashboard for live data visualization.
 - PlatformIO-based development environment.
-- ROS Noetic for drone-Pi-ESP communication (via UART)
+- ROS Noetic (coming soon) for drone-Pi-ESP communication (via UART)
 - Custom PCB + 3D-printed casing for DJI Matrice 210V2 (compatible with 350RTK)
 
 ---
@@ -178,9 +182,17 @@ npm run electron-dev
  .gitignore
  .gitmodules
  README.md
+ LICENSE
 ```
 ---
 
 ## 📄 License
 This project is licensed under the **MIT License**.
+
+## 🛠️ Developed By
+
+[Mount Royal University, Faculty of Science and Technology, Department of Earth and Environmental Science](https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm)
+
+[Gwen O'Sullivan](mailto:INSERT_GWEN_EMAIL) — Vice Dean of Science and Technology @ MRU  
+[Shivam Walia](mailto:shivamwalia2006@gmail.com) — Mechatronics Engineering @ UWaterloo
 
