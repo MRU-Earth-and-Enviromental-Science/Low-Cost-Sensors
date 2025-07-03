@@ -10,7 +10,6 @@
 #include <chrono>
 #include <thread>
 
-
 const char *IN_PORT = "/dev/ttyUSB0";
 const char *OUT_PORT = "/dev/ttyAMA0";
 constexpr speed_t BAUD = B115200;
@@ -41,12 +40,14 @@ bool hasValidChecksum(const std::string &sentence)
 int main()
 {
     int in_fd = -1;
-    while (in_fd < 0) {
-	in_fd = open(IN_PORT, O_RDONLY | O_NOCTTY);
-	if (in_fd < 0) {
-	    std::cerr << "Waiting for" << IN_PORT << "...\n";
-	    std::this_thread::sleep_for(std::chrono::seconds(2));
-	}
+    while (in_fd < 0)
+    {
+        in_fd = open(IN_PORT, O_RDONLY | O_NOCTTY);
+        if (in_fd < 0)
+        {
+            std::cerr << "Waiting for" << IN_PORT << "...\n";
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+        }
     }
 
     if (in_fd < 0)

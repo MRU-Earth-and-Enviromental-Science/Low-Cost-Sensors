@@ -16,6 +16,8 @@ This system integrates:
 ![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=white)
 
+## IGNORE ALL DOCKER FOR NOW
+
 ## 🚀 Features
 - Real-time measurements of:
   - CO<sub>2</sub> in ppm
