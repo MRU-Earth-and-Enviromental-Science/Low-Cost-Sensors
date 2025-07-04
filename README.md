@@ -1,6 +1,6 @@
 # 🌿 Air Quality Sensor
 
-An air quality monitoring system designed for DJI Matrice drones, capable of measuring and logging key environmental parameters: CO₂, CO, NOₓ, PM2.5, VOCs, temperature, and humidity. 
+An air quality monitoring system designed for DJI Matrice drones, capable of measuring and logging key environmental parameters: CO<sub>2</sub>, CO, CH<sub>4</sub>, NO<sub>x</sub>, PM<sub>2.5</sub>, VOCs, temperature, and humidity. 
 
 This system integrates:
 - An ESP32 for real-time sensor data acquisition
@@ -22,6 +22,7 @@ This system integrates:
 - Real-time measurements of:
   - CO<sub>2</sub> in ppm
   - CO (Carbon Monoxide) in ppm
+  - CH<sub>4</sub> in ppm
   - NO<sub>x</sub> in ppm
   - PM2.5 particulate matter in μg/m<sup>3</sup>
   - VOCs (Volatile Organic Compounds)
