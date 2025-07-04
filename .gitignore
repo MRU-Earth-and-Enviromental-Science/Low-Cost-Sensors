@@ -4,7 +4,7 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/extensions.json
-RaspDocker/.env
+Docker/.env
 .DS_Store
 .idea
-Parser_Pi/build
+ParserPi/build
