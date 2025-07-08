@@ -6,62 +6,108 @@
 #include <string>
 #include <iostream>
 
-int serial_port;
-bool gps_received = false;
+// Global variables
+int serial_port = -1;
+bool gps_fix_received = false;
 
-void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
+// Callback function for GPS data
+void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
-    gps_received = true;
-
-    char buffer[100];
-    snprintf(buffer, sizeof(buffer), "LAT:%.6f LNG:%.6f\n", msg->latitude, msg->longitude);
-    if (serial_port != -1)
+    // Check if the GPS fix is valid
+    if (msg->status.status >= sensor_msgs::NavSatStatus::STATUS_FIX)
     {
-        write(serial_port, buffer, strlen(buffer));
+        gps_fix_received = true;
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "LAT:%.6f,LNG:%.6f,ALT:%.2f\n", 
+                 msg->latitude, msg->longitude, msg->altitude);
+
+        if (serial_port != -1)
+        {
+            int bytes_written = write(serial_port, buffer, strlen(buffer));
+            if (bytes_written < 0)
+            {
+                ROS_ERROR("Failed to write to serial port.");
+            }
+            else
+            {
+                ROS_INFO("Sent to ESP32: %s", buffer);
+            }
+        }
     }
-    ROS_INFO("Sent to ESP32: %s", buffer);
+    else
+    {
+        gps_fix_received = false;
+        ROS_WARN("No GPS fix. Status: %d", msg->status.status);
+    }
+}
+
+// Function to initialize the serial port
+void initialize_serial_port(const std::string& port_name, int baud_rate)
+{
+    serial_port = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    if (serial_port < 0)
+    {
+        ROS_ERROR("Unable to open serial port: %s", port_name.c_str());
+        return;
+    }
+
+    struct termios tty;
+    if (tcgetattr(serial_port, &tty) != 0)
+    {
+        ROS_ERROR("Failed to get terminal attributes.");
+        close(serial_port);
+        serial_port = -1;
+        return;
+    }
+
+    cfsetospeed(&tty, baud_rate);
+    cfsetispeed(&tty, baud_rate);
+
+    tty.c_cflag |= (CLOCAL | CREAD);
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8;
+    tty.c_cflag &= ~PARENB;
+    tty.c_cflag &= ~CSTOPB;
+    tty.c_cflag &= ~CRTSCTS;
+    tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+    tty.c_oflag &= ~OPOST;
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VTIME] = 10;
+
+    if (tcsetattr(serial_port, TCSANOW, &tty) != 0)
+    {
+        ROS_ERROR("Failed to set terminal attributes.");
+        close(serial_port);
+        serial_port = -1;
+        return;
+    }
+
+    ROS_INFO("Serial port initialized: %s at %d baud", port_name.c_str(), baud_rate);
 }
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "drone_data_node");
     ros::NodeHandle nh;
+    ros::NodeHandle private_nh("~");
 
-    serial_port = open("/dev/ttyAMA0", O_RDWR | O_NOCTTY);
-    if (serial_port < 0)
-    {
-        perror("Warning: Unable to open serial port. Continuing without serial output.");
-        serial_port = -1;
-    }
-    // initalizing the port, setting baud rate and other parameters
-    ROS_INFO("Serial port opened successfully.");
+    std::string serial_port_name;
+    int baud_rate;
+    private_nh.param("serial_port", serial_port_name, std::string("/dev/ttyAMA0"));
+    private_nh.param("baud_rate", baud_rate, 115200);
 
-    struct termios tty;
-    tcgetattr(serial_port, &tty);
-    cfsetospeed(&tty, B115200);
-    cfsetispeed(&tty, B115200);
-    tty.c_cflag |= (CLOCAL | CREAD); // Ignore modem control lines and enable receiver
-    tty.c_cflag &= ~CSIZE;           // Clear the current data size setting
-    tty.c_cflag |= CS8;              // 8 data bits
-    tty.c_cflag &= ~PARENB;          // No parity
-    tty.c_cflag &= ~CSTOPB;          // 1 stop bit
-    tty.c_cflag &= ~CRTSCTS;         // No hardware flow control
-    tty.c_lflag = 0;                 // No signaling chars, no echo, no canonical processing
-    tty.c_oflag = 0;                 // No remapping, no delays
-    tty.c_cc[VMIN] = 0;              // No minimum number of characters to read
-    tty.c_cc[VTIME] = 10;            // 1 second timeout for read operations
-    tcsetattr(serial_port, TCSANOW, &tty);
+    initialize_serial_port(serial_port_name, baud_rate);
 
-    ros::Subscriber sub = nh.subscribe("/dji_sdk/gps_position", 10, gpsCallback); // Subscribe to GPS position topic
-    ros::Rate rate(1);                                                            // 1 Hz rate
+    ros::Subscriber sub = nh.subscribe("/dji_sdk/gps_position", 10, gpsCallback);
+    ros::Rate rate(1); // 1 Hz
 
     while (ros::ok())
     {
-        if (!gps_received && serial_port != -1)
+        if (!gps_fix_received && serial_port != -1)
         {
-            const char *default_msg = "LAT:-1.000000 LNG:-1.000000\n";
-            write(serial_port, default_msg, strlen(default_msg));
-            ROS_WARN("No GPS fix yet. Sending default value.");
+            const char* waiting_msg = "Waiting for GPS fix...\n";
+            write(serial_port, waiting_msg, strlen(waiting_msg));
+            ROS_WARN("No GPS fix yet. Sending waiting message.");
         }
 
         ros::spinOnce();

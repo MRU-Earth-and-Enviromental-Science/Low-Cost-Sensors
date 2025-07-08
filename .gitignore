@@ -8,3 +8,5 @@ Docker/.env
 .DS_Store
 .idea
 ParserPi/build
+.env
+Docker/.env
