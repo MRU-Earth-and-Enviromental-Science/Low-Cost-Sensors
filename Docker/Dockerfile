@@ -7,6 +7,7 @@ RUN apt update && apt install -y --no-install-recommends \
     cmake \
     build-essential \
     libusb-1.0-0-dev \
+    ffmpeg \
     libeigen3-dev \
     libtinyxml2-dev \
     libserial-dev \
@@ -21,8 +22,10 @@ RUN apt update && apt install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y libsdl2-dev
+RUN apt-get update && apt-get install -y libopencv-dev
 
 # ROS Kinetic Dependencies
+# Targeting OSDK ROS 4.1.0
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg2 \
@@ -63,12 +66,12 @@ RUN usermod -aG dialout dji
 COPY catkin_ws /home/dji/catkin_ws
 RUN chown -R dji:dji /home/dji/catkin_ws
 
-RUN git clone --recurse-submodules https://github.com/dji-sdk/Onboard-SDK-ROS.git /home/dji/catkin_ws/src/dji_osdk_ros
-RUN git clone https://github.com/shivam-2507/Onboard-SDK.git /home/dji/Onboard-SDK
-
+RUN git clone https://github.com/dji-sdk/Onboard-SDK.git /home/dji/Onboard-SDK
 WORKDIR /home/dji/Onboard-SDK
-RUN mkdir build && cd build && \
+RUN mkdir -p build && cd build && \
     cmake .. && make -j4 && make install
+
+RUN git clone --branch 4.1.0 --recurse-submodules https://github.com/dji-sdk/Onboard-SDK-ROS.git /home/dji/catkin_ws/src/dji_osdk_ros
 
 WORKDIR /home/dji/catkin_ws
 RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash && catkin_make"
@@ -80,6 +83,9 @@ RUN echo "source /home/dji/catkin_ws/devel/setup.bash" >> /home/dji/.bashrc
 COPY .env /home/dji/.env
 COPY run.sh /home/dji/run.sh
 RUN chmod +x /home/dji/run.sh && chown dji:dji /home/dji/run.sh
+
+RUN mkdir -p /etc/udev/rules.d && \
+    echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="2ca3", MODE="0666"' > /etc/udev/rules.d/DJIDevice.rules
 
 USER dji
 ENTRYPOINT ["/home/dji/run.sh"]
