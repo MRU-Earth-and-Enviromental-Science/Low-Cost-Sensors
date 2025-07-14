@@ -1,5 +1,0 @@
-app_id: import from env
-app_key: import from env
-device: /dev/ttyUSB0
-bauderate: 115200
-acm_port: /dev/ttyACM0

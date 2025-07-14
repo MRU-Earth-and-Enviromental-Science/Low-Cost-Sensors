@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/shivamwalia/Low-Cost-Sensors/rosWorkspace/devel/.private/gps_node_pi/setup.sh

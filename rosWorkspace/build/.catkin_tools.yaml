@@ -1,0 +1,6 @@
+devel_space: /home/shivamwalia/Low-Cost-Sensors/rosWorkspace/devel
+install: false
+install_space: /home/shivamwalia/Low-Cost-Sensors/rosWorkspace/install
+profile: default
+source_space: /home/shivamwalia/Low-Cost-Sensors/rosWorkspace/src
+workspace: /home/shivamwalia/Low-Cost-Sensors/rosWorkspace
