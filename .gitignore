@@ -7,6 +7,13 @@
 Docker/.env
 .DS_Store
 .idea
+
+**/build/
+**/devel/
+**/logs/
+
+.env
+
 ParserPi/build
 .env
 Docker/.env
