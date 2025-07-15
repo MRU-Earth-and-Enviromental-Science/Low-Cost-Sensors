@@ -1,8 +1,0 @@
-prefix=/home/shivamwalia/Low-Cost-Sensors/rosWorkspace/devel/.private/gps_node_pi
-
-Name: gps_node_pi
-Description: Description of gps_node_pi
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

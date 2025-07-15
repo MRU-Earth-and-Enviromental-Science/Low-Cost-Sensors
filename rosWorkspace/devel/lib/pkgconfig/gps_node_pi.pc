@@ -1,1 +1,0 @@
-/home/shivamwalia/Low-Cost-Sensors/rosWorkspace/devel/.private/gps_node_pi/lib/pkgconfig/gps_node_pi.pc
