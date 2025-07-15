@@ -10,3 +10,6 @@ Docker/.env
 ParserPi/build
 .env
 Docker/.env
+.rosWorkspace/build/
+.rosWorkspace/devel/
+.rosWorkspace/logs/
