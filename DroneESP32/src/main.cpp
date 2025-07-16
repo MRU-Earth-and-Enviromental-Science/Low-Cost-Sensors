@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <ros.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <std_msgs/UInt8.h>
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -56,68 +59,86 @@ typedef struct __attribute__((packed))
 // Global sensor data object
 SensorData sensorData;
 
-static double dmToDeg(const String &dm, char hemi)
+ros::NodeHandle nh;
+
+sensor_msgs::NavSatFix gps_data;
+std_msgs::UInt8 gps_health;
+
+void gpsCallback(const sensor_msgs::NavSatFix &msg)
 {
-    if (dm.length() < 4)
-        return 0.0;
-    double val = dm.toDouble();
-    int deg = int(val / 100);
-    double min = val - deg * 100;
-    double dec = deg + min / 60.0;
-    if (hemi == 'S' || hemi == 'W')
-        dec = -dec;
-    return dec;
+    gps_data = msg;
 }
 
-void readPiData()
+void gpsHealthCallback(const std_msgs::UInt8 &msg)
 {
-    while (Serial2.available())
-    {
-        char c = Serial2.read();
-
-        if (c == '\n' || c == '\r')
-        {
-            if (lineBuffer.length())
-            {
-                Serial.println("RAW: " + lineBuffer);
-
-                if (lineBuffer.startsWith("$GPRMC"))
-                {
-                    int idx = 0;
-                    String fields[12];
-                    for (int i = 0; i < 12 && idx != -1; ++i)
-                    {
-                        int next = lineBuffer.indexOf(',', idx);
-                        fields[i] = (next == -1) ? lineBuffer.substring(idx)
-                                                 : lineBuffer.substring(idx, next);
-                        idx = (next == -1) ? -1 : next + 1;
-                    }
-
-                    if (fields[2] == "A")
-                    {
-                        String latStr = fields[3];
-                        char latHem = fields[4].charAt(0);
-                        String lonStr = fields[5];
-                        char lonHem = fields[6].charAt(0);
-
-                        double lat = dmToDeg(latStr, latHem);
-                        double lon = dmToDeg(lonStr, lonHem);
-
-                        sensorData.lat = (float)lat;
-                        sensorData.lon = (float)lon;
-
-                        Serial.printf("✓ GPS  Lat: %.6f  Lon: %.6f\n", lat, lon);
-                    }
-                }
-            }
-            lineBuffer = "";
-        }
-        else if (isPrintable(c))
-        {
-            lineBuffer += c;
-        }
-    }
+    gps_health = msg;
 }
+
+ros::Subscriber<sensor_msgs::NavSatFix> gps_sub("/gps_node/gps_position", gpsCallback);
+ros::Subscriber<std_msgs::UInt8> health_sub("/gps_node/gps_health", gpsHealthCallback);
+
+// static double dmToDeg(const String &dm, char hemi)
+// {
+//     if (dm.length() < 4)
+//         return 0.0;
+//     double val = dm.toDouble();
+//     int deg = int(val / 100);
+//     double min = val - deg * 100;
+//     double dec = deg + min / 60.0;
+//     if (hemi == 'S' || hemi == 'W')
+//         dec = -dec;
+//     return dec;
+// }
+
+// void readPiData()
+// {
+//     while (Serial2.available())
+//     {
+//         char c = Serial2.read();
+
+//         if (c == '\n' || c == '\r')
+//         {
+//             if (lineBuffer.length())
+//             {
+//                 Serial.println("RAW: " + lineBuffer);
+
+//                 if (lineBuffer.startsWith("$GPRMC"))
+//                 {
+//                     int idx = 0;
+//                     String fields[12];
+//                     for (int i = 0; i < 12 && idx != -1; ++i)
+//                     {
+//                         int next = lineBuffer.indexOf(',', idx);
+//                         fields[i] = (next == -1) ? lineBuffer.substring(idx)
+//                                                  : lineBuffer.substring(idx, next);
+//                         idx = (next == -1) ? -1 : next + 1;
+//                     }
+
+//                     if (fields[2] == "A")
+//                     {
+//                         String latStr = fields[3];
+//                         char latHem = fields[4].charAt(0);
+//                         String lonStr = fields[5];
+//                         char lonHem = fields[6].charAt(0);
+
+//                         double lat = dmToDeg(latStr, latHem);
+//                         double lon = dmToDeg(lonStr, lonHem);
+
+//                         sensorData.lat = (float)lat;
+//                         sensorData.lon = (float)lon;
+
+//                         Serial.printf("✓ GPS  Lat: %.6f  Lon: %.6f\n", lat, lon);
+//                     }
+//                 }
+//             }
+//             lineBuffer = "";
+//         }
+//         else if (isPrintable(c))
+//         {
+//             lineBuffer += c;
+//         }
+//     }
+// }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
@@ -161,6 +182,16 @@ void readSensors()
 void sendData()
 {
     readSensors();
+
+    if (isnan(gps_data.latitude) || isnan(gps_data.longitude))
+    {
+        Serial.println("Skipping send: Invalid GPS");
+        return;
+    }
+
+    sensorData.lat = gps_data.latitude;
+    sensorData.lon = gps_data.longitude;
+
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sensorData, sizeof(sensorData));
     if (result == ESP_OK)
         Serial.println("ESP-NOW send success");
@@ -235,11 +266,16 @@ void setup()
     oledPrint("CH4 CO NOx OK");
     delay(500);
     oledPrint("System Ready");
+
+    nh.initNode();
+    nh.subscribe(gps_sub);
+    nh.subscribe(health_sub);
 }
 
 void loop()
 {
     readPiData();
+    nh.spinOnce();
     static unsigned long lastSend = 0;
     if (millis() - lastSend > 1000)
     {
