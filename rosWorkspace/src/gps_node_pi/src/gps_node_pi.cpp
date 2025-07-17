@@ -20,9 +20,9 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
   sensor_msgs::NavSatFix clean_msg = *msg;
 
   if (!droneConnection(msg)) {
-    clean_msg.latitude = 0.0;
-    clean_msg.longitude = 0.0;
-    clean_msg.altitude = 0.0;
+    clean_msg.latitude = 10.0;
+    clean_msg.longitude = 10.0;
+    clean_msg.altitude = 10.0;
     ROS_WARN("Drone GPS not valid. Sending zeros.");
   }
 

@@ -192,6 +192,10 @@ void sendData()
     sensorData.lat = gps_data.latitude;
     sensorData.lon = gps_data.longitude;
 
+    Serial.println(sensorData.lat);
+    Serial.println(sensorData.lon);
+
+
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sensorData, sizeof(sensorData));
     if (result == ESP_OK)
         Serial.println("ESP-NOW send success");
@@ -274,7 +278,7 @@ void setup()
 
 void loop()
 {
-    readPiData();
+   // readPiData();
     nh.spinOnce();
     static unsigned long lastSend = 0;
     if (millis() - lastSend > 1000)
