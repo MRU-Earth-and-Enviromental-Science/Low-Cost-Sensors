@@ -142,8 +142,8 @@ ros::Subscriber<std_msgs::UInt8> health_sub("/gps_node/gps_health", gpsHealthCal
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
-    Serial.print("ESP-NOW send status: ");
-    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
+    // Serial.print("ESP-NOW send status: ");
+    // Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
     if (!senderConnected && status == ESP_NOW_SEND_SUCCESS)
     {
         senderConnected = true;
@@ -160,8 +160,8 @@ void readSensors()
     if (isnan(t))
         t = -1.0;
     int co2ppm = -1;
-    if (k30.readCO2(co2ppm) != 0)
-        Serial.println("CO2 read failed");
+    //  if (k30.readCO2(co2ppm) != 0)
+    // Serial.println("CO2 read failed");
 
     int TVOC = -1;
     if (sgp_initialized && sgp.IAQmeasure())
@@ -185,22 +185,23 @@ void sendData()
 
     if (isnan(gps_data.latitude) || isnan(gps_data.longitude))
     {
-        Serial.println("Skipping send: Invalid GPS");
-        return;
+        Serial.println("GPS invalid or not received. Defaulting to 5.0, 5.0");
+        sensorData.lat = 5.0;
+        sensorData.lon = 5.0;
     }
-
-    sensorData.lat = gps_data.latitude;
-    sensorData.lon = gps_data.longitude;
+    else
+    {
+        sensorData.lat = gps_data.latitude;
+        sensorData.lon = gps_data.longitude;
+    }
 
     Serial.println(sensorData.lat);
     Serial.println(sensorData.lon);
 
-
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sensorData, sizeof(sensorData));
-    if (result == ESP_OK)
-        Serial.println("ESP-NOW send success");
-    else
-        Serial.printf("ESP-NOW send error: %d\n", result);
+    // if (result == ESP_OK)
+    // Serial.println("ESP-NOW send success");
+    // Serial.printf("ESP-NOW send error: %d\n", result);
 }
 
 void setup()
@@ -209,11 +210,11 @@ void setup()
     WiFi.mode(WIFI_STA);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
     esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE); // Ensure sender and receiver are on the same channel
-    Serial.println("ESP-NOW in Long-Range mode");
+    // Serial.println("ESP-NOW in Long-Range mode");
 
     if (esp_now_init() != ESP_OK)
     {
-        Serial.println("ESP-NOW init failed");
+        // Serial.println("ESP-NOW init failed");
         return;
     }
 
@@ -226,7 +227,7 @@ void setup()
 
     if (esp_now_add_peer(&peerInfo) != ESP_OK)
     {
-        Serial.println("Failed to add peer");
+        // Serial.println("Failed to add peer");
         return;
     }
 
@@ -235,13 +236,13 @@ void setup()
     oledPrint("Booting...");
 
     delay(100);
-    Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
+    // Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
     Serial1.begin(9600, SERIAL_8N1, 4, -1);
 
     delay(100);
     Serial2.begin(BAUD_UART, SERIAL_8N1, RX_PIN, TX_PIN);
-    Serial.printf("UART2 listening on GPIO %d (RX) @ %lu baud\n",
-                  RX_PIN, BAUD_UART);
+    // Serial.printf("UART2 listening on GPIO %d (RX) @ %lu baud\n",
+    //               RX_PIN, BAUD_UART);
 
     if (!pms7003.init(&Serial1))
         oledPrint("PMS FAIL");
@@ -249,12 +250,12 @@ void setup()
     if (sgp.begin())
     {
         sgp_initialized = true;
-        Serial.println("SGP30 initialized");
+        // Serial.println("SGP30 initialized");
         oledPrint("SGP30 OK");
     }
     else
     {
-        Serial.println("SGP30 init FAILED");
+        // Serial.println("SGP30 init FAILED");
         oledPrint("SGP30 FAILED");
         delay(500);
     }
@@ -278,7 +279,7 @@ void setup()
 
 void loop()
 {
-   // readPiData();
+    // readPiData();
     nh.spinOnce();
     static unsigned long lastSend = 0;
     if (millis() - lastSend > 1000)
