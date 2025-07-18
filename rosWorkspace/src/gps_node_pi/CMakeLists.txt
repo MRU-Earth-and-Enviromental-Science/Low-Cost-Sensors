@@ -9,7 +9,7 @@ project(gps_node_pi)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  sensor_msgs
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -104,7 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES gps_node_pi
-#  CATKIN_DEPENDS roscpp sensor_msgs
+#  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
 )
 
@@ -204,5 +204,5 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(gps_node src/gps_node_pi.cpp)
-target_link_libraries(gps_node ${catkin_LIBRARIES})
+add_executable(sensor_monitor src/gps_node_pi.cpp)
+target_link_libraries(sensor_monitor ${catkin_LIBRARIES})

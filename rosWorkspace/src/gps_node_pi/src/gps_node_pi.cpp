@@ -1,71 +1,83 @@
 #include "ros/ros.h"
-#include "sensor_msgs/NavSatFix.h"
-#include "std_msgs/UInt8.h"
+#include "std_msgs/Float32.h"
+#include "std_msgs/UInt16.h"
+#include "std_msgs/String.h"
 
-ros::Publisher gps_pub;
-ros::Publisher health_pub;
-
-bool espConnected = true;
-
-bool espConnection() {
-  return gps_pub.getNumSubscribers() > 0 && health_pub.getNumSubscribers() > 0;
-}
-
-bool droneConnection(const sensor_msgs::NavSatFix::ConstPtr &msg) {
-  return msg->status.status >= 0 && !std::isnan(msg->latitude) && !std::isnan(msg->longitude);
-}
-
-void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
+void temperatureCallback(const std_msgs::Float32::ConstPtr &msg)
 {
-  sensor_msgs::NavSatFix clean_msg = *msg;
-
-  if (!droneConnection(msg)) {
-    clean_msg.latitude = 10.0;
-    clean_msg.longitude = 10.0;
-    clean_msg.altitude = 10.0;
-    ROS_WARN("Drone GPS not valid. Sending zeros.");
-  }
-
-  if (espConnection()) {
-    gps_pub.publish(clean_msg);
-    espConnected = true;
-  } else {
-    if (espConnected) {
-      ROS_WARN("ESP32 disconnected — GPS data not sent.");
-      espConnected = false;
-    }
-  }
-
-  ROS_INFO("Lat: %f, Lon: %f, Alt: %f", clean_msg.latitude, clean_msg.longitude, clean_msg.altitude);
+  ROS_INFO("Temperature: %.2f °C", msg->data);
 }
 
-void gpsHealthCallback(const std_msgs::UInt8::ConstPtr &msg)
+void humidityCallback(const std_msgs::Float32::ConstPtr &msg)
 {
-  if (espConnection()) {
-    health_pub.publish(*msg);
-    espConnected = true;
-  } else {
-    if (espConnected) {
-      ROS_WARN("ESP32 disconnected — GPS health not sent.");
-      espConnected = false;
-    }
-  }
+  ROS_INFO("Humidity: %.2f %%", msg->data);
+}
 
-  ROS_INFO("GPS Health: %d", msg->data);
+void ch4Callback(const std_msgs::Float32::ConstPtr &msg)
+{
+  ROS_INFO("CH4: %.2f ppm", msg->data);
+}
+
+void co2Callback(const std_msgs::Float32::ConstPtr &msg)
+{
+  ROS_INFO("CO2: %.2f ppm", msg->data);
+}
+
+void tvocCallback(const std_msgs::Float32::ConstPtr &msg)
+{
+  ROS_INFO("TVOC: %.2f ppb", msg->data);
+}
+
+void coCallback(const std_msgs::Float32::ConstPtr &msg)
+{
+  ROS_INFO("CO: %.2f ppm", msg->data);
+}
+
+void noxCallback(const std_msgs::Float32::ConstPtr &msg)
+{
+  ROS_INFO("NOx: %.2f ppm", msg->data);
+}
+
+void pm1Callback(const std_msgs::UInt16::ConstPtr &msg)
+{
+  ROS_INFO("PM1.0: %d µg/m³", msg->data);
+}
+
+void pm25Callback(const std_msgs::UInt16::ConstPtr &msg)
+{
+  ROS_INFO("PM2.5: %d µg/m³", msg->data);
+}
+
+void pm10Callback(const std_msgs::UInt16::ConstPtr &msg)
+{
+  ROS_INFO("PM10.0: %d µg/m³", msg->data);
+}
+
+void statusCallback(const std_msgs::String::ConstPtr &msg)
+{
+  ROS_INFO("Sensor Status: %s", msg->data.c_str());
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "gps_node");
-  ROS_INFO("Starting GPS Node");
+  ros::init(argc, argv, "sensor_monitor_node");
+  ROS_INFO("Starting Sensor Monitor Node");
   ros::NodeHandle nh;
 
-  ros::Subscriber gps_sub = nh.subscribe("/dji_osdk_ros/gps_position", 10, gpsCallback);
-  ros::Subscriber health_sub = nh.subscribe("/dji_osdk_ros/gps_health", 10, gpsHealthCallback);
+  // Subscribe to all sensor topics
+  ros::Subscriber temp_sub = nh.subscribe("/sensors/temperature", 10, temperatureCallback);
+  ros::Subscriber humid_sub = nh.subscribe("/sensors/humidity", 10, humidityCallback);
+  ros::Subscriber ch4_sub = nh.subscribe("/sensors/ch4", 10, ch4Callback);
+  ros::Subscriber co2_sub = nh.subscribe("/sensors/co2", 10, co2Callback);
+  ros::Subscriber tvoc_sub = nh.subscribe("/sensors/tvoc", 10, tvocCallback);
+  ros::Subscriber co_sub = nh.subscribe("/sensors/co", 10, coCallback);
+  ros::Subscriber nox_sub = nh.subscribe("/sensors/nox", 10, noxCallback);
+  ros::Subscriber pm1_sub = nh.subscribe("/sensors/pm1_0", 10, pm1Callback);
+  ros::Subscriber pm25_sub = nh.subscribe("/sensors/pm2_5", 10, pm25Callback);
+  ros::Subscriber pm10_sub = nh.subscribe("/sensors/pm10_0", 10, pm10Callback);
+  ros::Subscriber status_sub = nh.subscribe("/sensors/status", 10, statusCallback);
 
-  gps_pub = nh.advertise<sensor_msgs::NavSatFix>("/gps_node/gps_position", 10);
-  health_pub = nh.advertise<std_msgs::UInt8>("/gps_node/gps_health", 10);
-
+  ROS_INFO("Sensor Monitor Node ready. Waiting for sensor data...");
   ros::spin();
   return 0;
 }
