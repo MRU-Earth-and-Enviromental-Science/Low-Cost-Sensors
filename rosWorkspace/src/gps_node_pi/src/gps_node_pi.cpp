@@ -57,6 +57,7 @@ void gpsHealthCallback(const std_msgs::UInt8::ConstPtr &msg)
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "gps_node");
+  ROS_INFO("Starting GPS Node");
   ros::NodeHandle nh;
 
   ros::Subscriber gps_sub = nh.subscribe("/dji_osdk_ros/gps_position", 10, gpsCallback);
