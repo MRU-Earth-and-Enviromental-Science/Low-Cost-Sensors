@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <n>gps_node_pi</n>
+  <name>gps_node_pi</name>
   <version>0.0.1</version>
   <description>The sensor monitor node for ESP32 sensor data</description>
 
