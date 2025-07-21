@@ -7,9 +7,9 @@
         <param name="baud" value="$(arg baud)" />
     </node>
 
-    <node name="gpsMonitor" pkg="gpsNodePi" type="sensorMonitor" output="screen" />
+    <node name="gpsMonitor" pkg="gps_node_pi" type="sensorMonitor" output="screen" />
 
-    <node name="processor" pkg="rosToRaw" type="dataProcessor" output="screen" />
+    <node name="processor" pkg="ros_to_raw" type="dataProcessor" output="screen" />
 
     <param name="systemInfo" value="Basic Low-Cost Sensors System Active" />
 

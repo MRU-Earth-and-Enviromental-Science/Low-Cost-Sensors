@@ -10,14 +10,14 @@
     </node>
 
     <!-- Launch the GPS/Sensor Monitor node -->
-    <node name="sensorMonitor" pkg="gpsNodePi" type="sensorMonitor" output="screen">
+    <node name="sensorMonitor" pkg="gps_node_pi" type="sensorMonitor" output="screen">
         <rosparam>
             # GPS node parameters can be added here if needed
         </rosparam>
     </node>
 
     <!-- Launch the Data Processor node -->
-    <node name="dataProcessor" pkg="rosToRaw" type="dataProcessor" output="screen">
+    <node name="dataProcessor" pkg="ros_to_raw" type="dataProcessor" output="screen">
         <rosparam>
             # Data processor parameters can be added here if needed
         </rosparam>

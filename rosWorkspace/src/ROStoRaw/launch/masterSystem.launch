@@ -23,11 +23,10 @@
         <param name="port" value="$(arg esp32Port)" />
         <param name="baud" value="$(arg esp32Baud)" />
         <param name="timeout" value="5.0" />
-        <remap from="__name" to="esp32SerialBridge" />
     </node>
 
     <node name="gpsSystemMonitor"
-        pkg="gpsNodePi"
+        pkg="gps_node_pi"
         type="sensorMonitor"
         output="screen"
         respawn="true"
@@ -37,7 +36,7 @@
     </node>
 
     <node name="rawDataProcessor"
-        pkg="rosToRaw"
+        pkg="ros_to_raw"
         type="dataProcessor"
         output="screen"
         respawn="true"

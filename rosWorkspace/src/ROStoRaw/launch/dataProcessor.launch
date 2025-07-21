@@ -1,6 +1,6 @@
 <launch>
     <!-- Launch the data processor node -->
-    <node name="dataProcessor" pkg="rosToRaw" type="dataProcessor" output="screen">
+    <node name="dataProcessor" pkg="ros_to_raw" type="dataProcessor" output="screen">
         <rosparam>
             # Node parameters can be added here if needed
         </rosparam>

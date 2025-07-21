@@ -190,7 +190,7 @@ start_sensor_system() {
     
     # Start the sensor system
     cd "$WORKSPACE_DIR"
-    nohup roslaunch rosToRaw masterSystem.launch $ESP32_ARGS > "$SENSOR_SYSTEM_LOG" 2>&1 &
+    nohup roslaunch ros_to_raw masterSystem.launch $ESP32_ARGS > "$SENSOR_SYSTEM_LOG" 2>&1 &
     echo $! > "$SENSOR_SYSTEM_PID"
     
     sleep 5  # Give system time to start
