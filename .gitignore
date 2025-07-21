@@ -8,9 +8,12 @@ Docker/.env
 .DS_Store
 .idea
 
+# ROS Build Files
 **/build/
 **/devel/
 **/logs/
+**/.catkin_tools/
+**/install/
 
 .env
 

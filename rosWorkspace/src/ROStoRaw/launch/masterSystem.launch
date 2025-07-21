@@ -1,0 +1,71 @@
+<launch>
+    <arg name="esp32Port" default="/dev/ttyUSB0" doc="ESP32 serial port" />
+    <arg name="esp32Baud" default="115200" doc="ESP32 baud rate" />
+    <arg name="enableDebug" default="true" doc="Enable debug output" />
+    <arg name="sensorRate" default="1.0" doc="Sensor reading rate in Hz" />
+
+    <rosparam param="sensorSystem">
+        sensorRate: $(arg sensorRate)
+        debugMode: $(arg enableDebug)
+        calibration:
+        temperature_offset: 0.5
+        humidity_clamp: [0.0, 100.0]
+        ch4_scaling: 1.05
+        co_sensitivity: 0.98
+        pm_density_correction: 1.02
+    </rosparam>
+    <node name="esp32SerialBridge"
+        pkg="rosserial_python"
+        type="serial_node.py"
+        output="screen"
+        respawn="true"
+        respawn_delay="5">
+        <param name="port" value="$(arg esp32Port)" />
+        <param name="baud" value="$(arg esp32Baud)" />
+        <param name="timeout" value="5.0" />
+        <remap from="__name" to="esp32SerialBridge" />
+    </node>
+
+    <node name="gpsSystemMonitor"
+        pkg="gpsNodePi"
+        type="sensorMonitor"
+        output="screen"
+        respawn="true"
+        respawn_delay="3">
+        <param name="gps_rate" value="$(arg sensorRate)" />
+        <param name="debug" value="$(arg enableDebug)" />
+    </node>
+
+    <node name="rawDataProcessor"
+        pkg="rosToRaw"
+        type="dataProcessor"
+        output="screen"
+        respawn="true"
+        respawn_delay="3">
+        <param name="processing_rate" value="$(arg sensorRate)" />
+        <param name="debug" value="$(arg enableDebug)" />
+        <remap from="~temperature_offset" to="/sensorSystem/calibration/temperature_offset" />
+    </node>
+
+    <node name="systemHealthMonitor"
+        pkg="diagnostic_aggregator"
+        type="aggregator_node"
+        output="screen">
+        <rosparam>
+            analyzers:
+            sensors:
+            type: diagnostic_aggregator/GenericAnalyzer
+            path: Sensors
+            contains: ['/sensors']
+            processing:
+            type: diagnostic_aggregator/GenericAnalyzer
+            path: Processing
+            contains: ['/processed']
+        </rosparam>
+    </node>
+
+
+    <param name="launchInfo"
+        value="Low-Cost Sensors System - ESP32 Port: $(arg esp32Port), Rate: $(arg sensorRate)Hz" />
+
+</launch>

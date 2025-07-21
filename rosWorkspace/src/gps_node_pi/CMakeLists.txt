@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(gps_node_pi)
+project(gpsNodePi)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -204,5 +204,5 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(sensor_monitor src/gps_node_pi.cpp)
-target_link_libraries(sensor_monitor ${catkin_LIBRARIES})
+add_executable(sensorMonitor src/gps_node_pi.cpp)
+target_link_libraries(sensorMonitor ${catkin_LIBRARIES})
