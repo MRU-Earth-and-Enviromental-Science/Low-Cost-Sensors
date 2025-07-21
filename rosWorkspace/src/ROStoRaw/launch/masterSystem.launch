@@ -1,6 +1,6 @@
 <launch>
     <arg name="esp32Port" default="/dev/ttyUSB0" doc="ESP32 serial port" />
-    <arg name="esp32Baud" default="115200" doc="ESP32 baud rate" />
+    <arg name="esp32Baud" default="57600" doc="ESP32 baud rate" />
     <arg name="enableDebug" default="true" doc="Enable debug output" />
     <arg name="sensorRate" default="1.0" doc="Sensor reading rate in Hz" />
 
@@ -8,11 +8,11 @@
         sensorRate: $(arg sensorRate)
         debugMode: $(arg enableDebug)
         calibration:
-        temperature_offset: 0.5
-        humidity_clamp: [0.0, 100.0]
-        ch4_scaling: 1.05
-        co_sensitivity: 0.98
-        pm_density_correction: 1.02
+          temperature_offset: 0.5
+          humidity_clamp: [0.0, 100.0]
+          ch4_scaling: 1.05
+          co_sensitivity: 0.98
+          pm_density_correction: 1.02
     </rosparam>
     <node name="esp32SerialBridge"
         pkg="rosserial_python"
@@ -52,14 +52,14 @@
         output="screen">
         <rosparam>
             analyzers:
-            sensors:
-            type: diagnostic_aggregator/GenericAnalyzer
-            path: Sensors
-            contains: ['/sensors']
-            processing:
-            type: diagnostic_aggregator/GenericAnalyzer
-            path: Processing
-            contains: ['/processed']
+              sensors:
+                type: diagnostic_aggregator/GenericAnalyzer
+                path: Sensors
+                contains: ['/sensors']
+              processing:
+                type: diagnostic_aggregator/GenericAnalyzer
+                path: Processing
+                contains: ['/processed']
         </rosparam>
     </node>
 
