@@ -67,15 +67,15 @@ void gps_health_callback(const std_msgs::UInt8::ConstPtr &msg)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "gps_node");
-  ROS_INFO("Starting GPS Node");
+  ros::init(argc, argv, "sensor_monitor");
+  ROS_INFO("Starting Sensor Monitor Node");
   ros::NodeHandle nh;
 
   ros::Subscriber gps_sub = nh.subscribe("/dji_osdk_ros/gps_position", 10, gps_callback);
   ros::Subscriber health_sub = nh.subscribe("/dji_osdk_ros/gps_health", 10, gps_health_callback);
 
-  gps_pub = nh.advertise<sensor_msgs::NavSatFix>("/gps_node/gps_position", 10);
-  health_pub = nh.advertise<std_msgs::UInt8>("/gps_node/gps_health", 10);
+  gps_pub = nh.advertise<sensor_msgs::NavSatFix>("/sensor_monitor/gps_position", 10);
+  health_pub = nh.advertise<std_msgs::UInt8>("/sensor_monitor/gps_health", 10);
 
   ros::spin();
   return 0;
