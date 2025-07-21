@@ -7,11 +7,13 @@ ros::Publisher health_pub;
 
 bool espConnected = true;
 
-bool espConnection() {
+bool espConnection()
+{
   return gps_pub.getNumSubscribers() > 0 && health_pub.getNumSubscribers() > 0;
 }
 
-bool droneConnection(const sensor_msgs::NavSatFix::ConstPtr &msg) {
+bool droneConnection(const sensor_msgs::NavSatFix::ConstPtr &msg)
+{
   return msg->status.status >= 0 && !std::isnan(msg->latitude) && !std::isnan(msg->longitude);
 }
 
@@ -19,18 +21,23 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
 {
   sensor_msgs::NavSatFix clean_msg = *msg;
 
-  if (!droneConnection(msg)) {
+  if (!droneConnection(msg))
+  {
     clean_msg.latitude = 10.0;
     clean_msg.longitude = 10.0;
     clean_msg.altitude = 10.0;
     ROS_WARN("Drone GPS not valid. Sending zeros.");
   }
 
-  if (espConnection()) {
+  if (espConnection())
+  {
     gps_pub.publish(clean_msg);
     espConnected = true;
-  } else {
-    if (espConnected) {
+  }
+  else
+  {
+    if (espConnected)
+    {
       ROS_WARN("ESP32 disconnected — GPS data not sent.");
       espConnected = false;
     }
@@ -41,11 +48,15 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
 
 void gpsHealthCallback(const std_msgs::UInt8::ConstPtr &msg)
 {
-  if (espConnection()) {
+  if (espConnection())
+  {
     health_pub.publish(*msg);
     espConnected = true;
-  } else {
-    if (espConnected) {
+  }
+  else
+  {
+    if (espConnected)
+    {
       ROS_WARN("ESP32 disconnected — GPS health not sent.");
       espConnected = false;
     }

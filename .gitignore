@@ -4,6 +4,7 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/extensions.json
+.vscode/settings.json
 Docker/.env
 .DS_Store
 .idea
@@ -20,3 +21,6 @@ Docker/.env
 .rosWorkspace/build/
 .rosWorkspace/devel/
 .rosWorkspace/logs/
+
+.catkin_tools/
+.catkin_workspace
