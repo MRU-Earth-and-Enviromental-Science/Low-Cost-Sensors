@@ -21,7 +21,7 @@ void gps_callback(const sensor_msgs::NavSatFix::ConstPtr &msg)
 {
   sensor_msgs::NavSatFix clean_msg = *msg;
 
-  if (!droneConnection(msg))
+  if (!drone_connection(msg))
   {
     clean_msg.latitude = 10.0;
     clean_msg.longitude = 10.0;
@@ -29,17 +29,17 @@ void gps_callback(const sensor_msgs::NavSatFix::ConstPtr &msg)
     ROS_WARN("Drone GPS not valid. Sending zeros.");
   }
 
-  if (espConnection())
+  if (esp_connection())
   {
     gps_pub.publish(clean_msg);
-    espConnected = true;
+    esp_connected = true;
   }
   else
   {
-    if (espConnected)
+    if (esp_connected)
     {
       ROS_WARN("ESP32 disconnected — GPS data not sent.");
-      espConnected = false;
+      esp_connected = false;
     }
   }
 
@@ -48,17 +48,17 @@ void gps_callback(const sensor_msgs::NavSatFix::ConstPtr &msg)
 
 void gps_health_callback(const std_msgs::UInt8::ConstPtr &msg)
 {
-  if (espConnection())
+  if (esp_connection())
   {
     health_pub.publish(*msg);
-    espConnected = true;
+    esp_connected = true;
   }
   else
   {
-    if (espConnected)
+    if (esp_connected)
     {
       ROS_WARN("ESP32 disconnected — GPS health not sent.");
-      espConnected = false;
+      esp_connected = false;
     }
   }
 
