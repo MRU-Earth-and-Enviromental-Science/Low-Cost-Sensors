@@ -1,4 +1,4 @@
-#include "data_processor/data_processor.h"
+#include "../include/dataProcessor.h"
 #include <algorithm>
 
 DataProcessor::DataProcessor() : nh_("~"), temperature_(25.0), humidity_(50.0)
@@ -194,4 +194,17 @@ float DataProcessor::processPM10(float raw_pm10)
 {
     // Apply density correction and return raw float
     return raw_pm10 * 1.02; // Density correction factor
+}
+
+int main(int argc, char **argv)
+{
+    ros::init(argc, argv, "data_processor");
+
+    DataProcessor processor;
+
+    ROS_INFO("Data Processor Node started. Waiting for sensor data...");
+
+    ros::spin();
+
+    return 0;
 }

@@ -1,16 +1,17 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(dataToRaw)
+project(ROStoRaw)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
 )
 
-catkin_packages()
+catkin_package()
 
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(dataToRaw src/dataToRaw.cpp)
-target_link_libraries(dataToRaw ${catkin_LIBRARIES})
+add_executable(data_processor src/dataProcessor.cpp)
+target_link_libraries(data_processor ${catkin_LIBRARIES})

@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>gps_node_pi</name>
+  <name>ROStoRaw</name>
   <version>0.0.1</version>
   <description>Takes the incoming sensor data and converts it to raw to be sent elsewhere</description>
   <maintainer email="shivamwalia2006@gmail.com">Shivam Walia</maintainer>
   <license>MIT</license>
-  <buildtool_depend>catkin</buildtool_depend>                                            │
-  <build_depend>roscpp</build_depend>                                                    │
-  <build_depend>std_msgs</build_depend>                                                  │
-  <build_export_depend>roscpp</build_export_depend>                                      │
-  <build_export_depend>std_msgs</build_export_depend>                                    │
-  <exec_depend>roscpp</exec_depend>                                                      │
-  <exec_depend>std_msgs</exec_depend> 
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
 
   <export>
 

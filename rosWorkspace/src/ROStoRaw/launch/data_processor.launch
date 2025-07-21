@@ -1,0 +1,11 @@
+<launch>
+    <!-- Launch the data processor node -->
+    <node name="data_processor" pkg="ROStoRaw" type="data_processor" output="screen">
+        <rosparam>
+            # Node parameters can be added here if needed
+        </rosparam>
+    </node>
+
+    <!-- Optional: You can add other nodes here if needed -->
+
+</launch>
