@@ -5,19 +5,19 @@
 ros::Publisher gps_pub;
 ros::Publisher health_pub;
 
-bool espConnected = true;
+bool esp_connected = true;
 
-bool espConnection()
+bool esp_connection()
 {
   return gps_pub.getNumSubscribers() > 0 && health_pub.getNumSubscribers() > 0;
 }
 
-bool droneConnection(const sensor_msgs::NavSatFix::ConstPtr &msg)
+bool drone_connection(const sensor_msgs::NavSatFix::ConstPtr &msg)
 {
   return msg->status.status >= 0 && !std::isnan(msg->latitude) && !std::isnan(msg->longitude);
 }
 
-void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
+void gps_callback(const sensor_msgs::NavSatFix::ConstPtr &msg)
 {
   sensor_msgs::NavSatFix clean_msg = *msg;
 
@@ -46,7 +46,7 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
   ROS_INFO("Lat: %f, Lon: %f, Alt: %f", clean_msg.latitude, clean_msg.longitude, clean_msg.altitude);
 }
 
-void gpsHealthCallback(const std_msgs::UInt8::ConstPtr &msg)
+void gps_health_callback(const std_msgs::UInt8::ConstPtr &msg)
 {
   if (espConnection())
   {
@@ -71,8 +71,8 @@ int main(int argc, char **argv)
   ROS_INFO("Starting GPS Node");
   ros::NodeHandle nh;
 
-  ros::Subscriber gps_sub = nh.subscribe("/dji_osdk_ros/gps_position", 10, gpsCallback);
-  ros::Subscriber health_sub = nh.subscribe("/dji_osdk_ros/gps_health", 10, gpsHealthCallback);
+  ros::Subscriber gps_sub = nh.subscribe("/dji_osdk_ros/gps_position", 10, gps_callback);
+  ros::Subscriber health_sub = nh.subscribe("/dji_osdk_ros/gps_health", 10, gps_health_callback);
 
   gps_pub = nh.advertise<sensor_msgs::NavSatFix>("/gps_node/gps_position", 10);
   health_pub = nh.advertise<std_msgs::UInt8>("/gps_node/gps_health", 10);
