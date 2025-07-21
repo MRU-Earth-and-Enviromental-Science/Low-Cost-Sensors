@@ -4,6 +4,6 @@
 [submodule "RaspDocker/Onboard-SDK-ROS"]
 	path = RaspDocker/Onboard-SDK-ROS
 	url = git@github.com:shivam-2507/Onboard-SDK-ROS.git
-[submodule "GroundStation/sensor-dashboard"]
-	path = GroundStation/sensor-dashboard
+[submodule "ground_station/sensor-dashboard"]
+	path = ground_station/sensor-dashboard
 	url = git@github.com:MRU-Earth-and-Enviromental-Science/sensor-dashboard.git
