@@ -1,6 +1,4 @@
 <launch>
-    <include file="$(find dji_osdk_ros)/launch/dji_vehicle_node.launch" />
-
     <arg name="port" default="/dev/ttyUSB1" />
     <arg name="baud" default="57600" />
 
@@ -9,7 +7,7 @@
         <param name="baud" value="$(arg baud)" />
     </node>
 
-    <node name="sensor_monitor" pkg="gps_node_pi" type="sensorMonitor" output="screen">
+    <node name="sensor_monitor" pkg="sensor_monitor" type="sensor_monitor" output="screen">
         <rosparam>
             # Sensor monitor node parameters can be added here if needed
         </rosparam>
