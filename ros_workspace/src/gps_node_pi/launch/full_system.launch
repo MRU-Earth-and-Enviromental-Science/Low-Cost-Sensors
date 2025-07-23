@@ -2,6 +2,9 @@
     <arg name="port" default="/dev/ttyUSB1" />
     <arg name="baud" default="57600" />
 
+    <!-- Launch DJI OSDK ROS node -->
+    <include file="$(find Onboard-SDK-ROS)/launch/dji_vehicle_node.launch" />
+
     <node name="serial_node" pkg="rosserial_python" type="serial_node.py" output="screen">
         <param name="port" value="$(arg port)" />
         <param name="baud" value="$(arg baud)" />
