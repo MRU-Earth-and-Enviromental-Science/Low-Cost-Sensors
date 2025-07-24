@@ -24,3 +24,5 @@ Docker/.env
 
 .catkin_tools/
 .catkin_workspace
+
+drone_esp32/lib/ros_lib
