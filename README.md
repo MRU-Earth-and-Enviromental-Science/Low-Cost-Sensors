@@ -10,14 +10,18 @@ This system integrates:
 
 ---
 ![License](https://img.shields.io/badge/License-MIT-000000?style=for-the-badge&logo=openaccess&logoColor=white)
+![DJI](https://img.shields.io/badge/DJI-000000?style=for-the-badge&logo=dji&logoColor=white)
+
 ![ROS Noetic](https://img.shields.io/badge/ROS%20Noetic-000000?style=for-the-badge&logo=ROS&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
 ![PlatformIO](https://img.shields.io/badge/PlatformIO-000000?style=for-the-badge&logo=platformio&logoColor=white)
 ![ESP32](https://img.shields.io/badge/ESP32-000000?style=for-the-badge&logo=espressif&logoColor=white)
 ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-000000?style=for-the-badge&logo=raspberrypi&logoColor=white)
-![DJI](https://img.shields.io/badge/DJI-000000?style=for-the-badge&logo=dji&logoColor=white)
 ![C++](https://img.shields.io/badge/C++-000000?style=for-the-badge&logo=cplusplus&logoColor=white)
+![Python](https://img.shields.io/badge/Python-000000?style=for-the-badge&logo=python&logoColor=white)
+![Bash](https://img.shields.io/badge/Bash-000000?style=for-the-badge&logo=gnu-bash&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=white)
+
 
 ## 🚀 Features
 - Real-time measurements of:
@@ -29,7 +33,7 @@ This system integrates:
   - VOCs (Volatile Organic Compounds)
   - Temperature (°C) and Humidity (%)
 - Web-based dashboard for live data visualization.
-  - Built using Electron, Typescript, and Next.js 
+  - Built using Electron, Typescript, Next.js, Python and [v0.dev](https://v0.dev)
 - PlatformIO-based development environment.
 - ROS Noetic for drone-Pi-ESP communication (via UART)
   - Allows for GPS data to be pulled from the drone
@@ -83,7 +87,7 @@ cd ~/Low-Cost-Sensors/ground_station/ground_esp32
 
 ### 5. Raspberry Pi Set-Up
 - Running any Linux Distro between 16.04 and 20.04 (This was developed on Ubuntu 20.04 Server, Raspberry Pi 3)
-- Require ROS Noetic (Base) to be installed
+- Requires ROS Noetic (Base) to be installed
 - Requires a C++ compiler
 - Requires [CMake](https://cmake.org/download/) > 3.0
 - Clone this repo on the Pi
@@ -131,58 +135,18 @@ npm run electron-dev
 ## 🧰 Hardware Used
 
 - **ESP32 Dev Module (WROVER-E based)**
-- **Raspberry Pi 5**
+- **Raspberry Pi 3**
 - **K30 CO₂ Sensor**
-- **MQ Series Gas Sensors** (e.g., MQ-7 for CO, MQ-135 for NOₓ/CH₄)
+- **MQ Series Gas Sensors** (e.g., MQ-7 for CO, MQ-135 for NOₓ, MQ-4 for CH₄)
 - **Plantower PMS7003** (PM2.5 Sensor)
 - **SGP30** (VOC Sensor)
-- **DHT11 / DHT22** (Temperature & Humidity)
+- **DHT11** (Temperature & Humidity)
 - **UART to USB Cable** (Drone to Pi connection)
 - **Custom PCB** Ordered from JLC PCB (Found in Repo)
+- **Bill of Materials Found in Repo**
 
 ## Casing
-- STEP and STL Files available
----
-
-## 📁 Project Structure
-```
-/drone_esp32/                      # ESP32 firmware for sensor readings
-  ├── include/
-  ├── lib/
-  ├── src/
-  ├── test/
-  └── platformio.ini
-
-/ground_station/                   # Ground station receiver and dashboard
-  ├── ground_esp32/                # ESP32 code for ground station
-  │   ├── include/
-  │   ├── lib/
-  │   ├── src/
-  │   ├── test/
-  │   └── platformio.ini
-  └── sensor-dashboard/            # Git submodule: web dashboard frontend
-
-/hardware/
-  └── gerber_files.zip             # Gerber files for PCB
-
-/mechanical/
-  ├── step_files/                  # STEP files for 3D models
-  └── stl_files/                   # STL files for 3D printing
-
-/parser_pi/                        # Raspberry Pi GPS parser
-  ├── src/
-  ├── CMakeLists.txt
-  └── installService.sh
-
-/ros_workspace/                    # ROS workspace
-  └── src/
-      └── gps_node_pi/
-
-install_sdk.sh
-launch_system.sh
-LICENSE
-README.md
-```
+- STEP and STL Files available to mount to Matrice210
 ---
 
 ## 📄 License
@@ -192,6 +156,9 @@ This project is licensed under the **MIT License**.
 
 [Mount Royal University, Faculty of Science and Technology, Department of Earth and Environmental Science](https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/Departments/EarthEnvironmentalSciences/index.htm)
 
-[Gwen O'Sullivan](mailto:INSERT_GWEN_EMAIL) — Vice Dean of Science and Technology @ MRU
-[Shivam Walia](mailto:shivamwalia2006@gmail.com) — Mechatronics Engineering @ UWaterloo
+[Gwen O'Sullivan](https://www.mtroyal.ca/ProgramsCourses/FacultiesSchoolsCentres/ScienceTechnology/office-of-the-dean/index.htm) — Vice Dean of Science and Technology @ MRU \
+[Shivam Walia](https://www.linkedin.com/in/shivam-walia1/) — Mechatronics Engineering @ UWaterloo
 
+## ❓ Questions
+[shivamwalia2006 [at] gmail [dot] com](mailto:shivamwalia2006@gmail.com) \
+[gosullivan [at] mtroyal [dot] ca](mailto:gosullivan@mtroyal.ca)
