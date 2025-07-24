@@ -6,17 +6,18 @@ This system integrates:
 - An ESP32 for real-time sensor data acquisition
 - ESP-NOW for wireless transmission to a ground station
 - A web dashboard for live monitoring and CSV export
-- Raspberry Pi running ROS Noetic and DJI Onboard SDK (coming soon)
+- Raspberry Pi running ROS Noetic and DJI Onboard SDK
 
 ---
 ![License](https://img.shields.io/badge/License-MIT-000000?style=for-the-badge&logo=openaccess&logoColor=white)
+![ROS Noetic](https://img.shields.io/badge/ROS%20Noetic-000000?style=for-the-badge&logo=ROS&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
 ![PlatformIO](https://img.shields.io/badge/PlatformIO-000000?style=for-the-badge&logo=platformio&logoColor=white)
+![ESP32](https://img.shields.io/badge/ESP32-000000?style=for-the-badge&logo=espressif&logoColor=white)
 ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-000000?style=for-the-badge&logo=raspberrypi&logoColor=white)
 ![DJI](https://img.shields.io/badge/DJI-000000?style=for-the-badge&logo=dji&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
+![C++](https://img.shields.io/badge/C++-000000?style=for-the-badge&logo=cplusplus&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=white)
-
-## IGNORE ALL DOCKER FOR NOW
 
 ## 🚀 Features
 - Real-time measurements of:
@@ -28,31 +29,34 @@ This system integrates:
   - VOCs (Volatile Organic Compounds)
   - Temperature (°C) and Humidity (%)
 - Web-based dashboard for live data visualization.
+  - Built using Electron, Typescript, and Next.js 
 - PlatformIO-based development environment.
-- ROS Noetic (coming soon) for drone-Pi-ESP communication (via UART)
-- Custom PCB + 3D-printed casing for DJI Matrice 210V2 (compatible with 350RTK)
+- ROS Noetic for drone-Pi-ESP communication (via UART)
+  - Allows for GPS data to be pulled from the drone
+- Custom PCB + 3D-printed casing for DJI Matrice 210V2 (Matrice 350RTK Coming Soon)
 
 ---
 
 ## 🛠️ Getting Started (Software)
 
 ### 1. Prerequisites
-- Familiarity with terminal and basic UNIX commands
+- Familiarity with Git, terminal and basic UNIX commands
 - Recommended: Linux host (Windows/Mac supported but requires extra configuration)
 - **Required Tools**
   - C++ Compiler
     - Linux: `sudo apt install build-essential`
-    - Windows: Install [MinGW](https://www.mingw-w64.org/) or use WSL
     - Mac: Xcode Command Line Tools (`xcode-select --install`)
-  - [VSCode](https://code.visualstudio.com/)
+    - Windows: Install [MinGW](https://www.mingw-w64.org/) or use WSL
+  - [VSCode](https://code.visualstudio.com/) (Or IDE of your choice)
   - [Platform IO Extension](https://platformio.org/install/ide?install=vscode) for VSCode
-  - [Optional] Install [PlatformIO Core CLI](https://docs.platformio.org/en/latest/core/quickstart.html) for terminal-only workflows
-  - [Optional] Docker (https://www.docker.com/get-started/) (for running ROS & DJI SDK in containers, currently not required, for future updates)
+  - [ROS Noetic](https://wiki.ros.org/noetic/Installation/Ubuntu) (This software was built in 2025 on Ubuntu 20.04)
+  - [Optional but Recommended] [PlatformIO Core CLI](https://docs.platformio.org/en/latest/core/quickstart.html) for terminal workflows
     
 ### 2. Clone the Repository on the Machine Used to Deploy to ESP32
 ```bash
-git clone https://github.com/MRU-Earth-and-Enviromental-Science/Low-Costs-Sensors-Gas.git
-cd Low-Costs-Sensors-Gas
+cd ~
+git clone https://github.com/MRU-Earth-and-Enviromental-Science/Low-Cost-Sensors.git
+cd Low-Cost-Sensors
 code . # Open in VSCode (or editor of your choice)
 ```
 ### 3. Upload Code to ESP32 on the Drone
@@ -60,49 +64,50 @@ code . # Open in VSCode (or editor of your choice)
 - Connect your **ESP32 dev board** via USB.
 - Open the Drone_System Directory on **Visual Studio Code**.
 ```bash
-cd path-to-directory/Low-Costs-Sensors-Gas/Drone_System
+cd ~/Low-Cost-Sensors/drone_esp32
 ``` 
 - Use PlatformIO to build and upload:  
   - Click the right-facing arrow (➤) at the bottom of VSCode, or  
-  - Use the command palette: `PlatformIO: Upload`  
+```shell
+# If using PIO command line
+pio run --target upload
+```
 
 > PlatformIO will automatically detect your environment and upload the firmware to the board.
 
 ### 4. Configure the ESP32 on Ground Station
 ```bash
-cd "path-to-directory/Low-Costs-Sensors-Gas/Ground_Station_Reader/Ground Station"
+cd ~/Low-Cost-Sensors/ground_station/ground_esp32
 ```
-- Use PlatformIO to build and upload the code to the ESP32.
+- Use PlatformIO to build and upload the code to the ESP32. (same as above)
 
 ### 5. Raspberry Pi Set-Up
-- Running any modern Linux Distro (This was developed on Ubuntu 24.04)
+- Running any Linux Distro between 16.04 and 20.04 (This was developed on Ubuntu 20.04 Server, Raspberry Pi 3)
+- Require ROS Noetic (Base) to be installed
+- Requires a C++ compiler
+- Requires [CMake](https://cmake.org/download/) > 3.0
 - Clone this repo on the Pi
 ```bash
-git clone https://github.com/yourusername/Low-Costs-Sensors-Gas.git
-cd path-to-directory/Low-Costs-Sensors-Gas/Parser_Pi
+cd ~
+git clone https://github.com/MRU-Earth-and-Enviromental-Science/Low-Cost-Sensors.git
 ```
-- Run install_service.sh script to make it run on boot
+- Clone the DJI OSDK and DJI OSDK ROS Packages
 ```bash
-chmod +x installService.sh
-./installService.sh
-```
+cd ~
+git clone https://github.com/dji-sdk/Onboard-SDK.git
 
-- [Optional] Setup Docker Daemon (if wanting to use DJI OSDK)
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws/src
+catkin_init_workspace
+git clone https://github.com/dji-sdk/Onboard-SDK-ROS/tree/master/src/dji_osdk_ros
+```
+Run the install script to setup the rest of the code
 ```bash
-sudo apt-get update
-sudo apt-get install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-
-sudo docker run hello-world
+cd ~/Low-Cost-Sensors
+chmod +x install_sdk.sh
+./install_sdk.sh
 ```
+
 ### 6. Setting Up and Running the Dashboard
 - Install the Dashboard from the 'Releases Section' of the GitHub repo linked below for your system.
   - For **Windows**: Download the `.exe` file.
@@ -111,10 +116,10 @@ sudo docker run hello-world
 - Alternatively, you can clone the sensor-dashboard submodule and build from source (must have npm installed):
 ```bash
 # Clone the sensor-dashboard submodule
-cd path-to-directory/Low-Costs-Sensors-Gas
+cd ~/Low-Cost-Sensors
 git submodule update --init --recursive
 
-cd Ground_Station_Reader/sensor-dashboard
+cd ground_station/sensor-dashboard
 
 npm install --legacy-peer-deps
 npm run dev
@@ -141,51 +146,42 @@ npm run electron-dev
 
 ## 📁 Project Structure
 ```
-
-/Docker/                           # Docker-based ROS environment
-  ├── catkin_ws/                   # ROS workspace
-  ├── .dockerignore
-  ├── .env
-  ├── dockerCommands.sh
-  ├── Dockerfile
-  ├── run.sh
-  └── UserConfig.txt
-
-/Drone_System/                     # ESP32 firmware for sensor readings
+/drone_esp32/                      # ESP32 firmware for sensor readings
   ├── include/
   ├── lib/
   ├── src/
   ├── test/
-  ├── .gitignore
   └── platformio.ini
 
-/Ground_Station_Reader/            # Ground station receiver and dashboard
-  ├── sensor-dashboard/            # Git submodule: web dashboard frontend: git@github.com:MRU-Earth-and-Enviromental-Science/sensor-dashboard.git
-  └── Ground Station/
-      ├── include/
-      ├── lib/
-      ├── src/
-      ├── test/
-      ├── .gitattributes
-      ├── .gitignore
-      └── platformio.ini
+/ground_station/                   # Ground station receiver and dashboard
+  ├── ground_esp32/                # ESP32 code for ground station
+  │   ├── include/
+  │   ├── lib/
+  │   ├── src/
+  │   ├── test/
+  │   └── platformio.ini
+  └── sensor-dashboard/            # Git submodule: web dashboard frontend
 
-/Hardware/
-  └── Gerber Files.zip/            # Gerber files for PCB
+/hardware/
+  └── gerber_files.zip             # Gerber files for PCB
 
-/Mechanical/
-  ├── STEP-Files/                  # 3D models for casing
-  └── STL-Files/                   # STEP files for custom casing
+/mechanical/
+  ├── step_files/                  # STEP files for 3D models
+  └── stl_files/                   # STL files for 3D printing
 
-/Parser_Pi/                        # Raspberry Pi GPS parser
+/parser_pi/                        # Raspberry Pi GPS parser
   ├── src/
   ├── CMakeLists.txt
-  └── runOnBoot.sh
-  
- .gitignore
- .gitmodules
- README.md
- LICENSE
+  └── installService.sh
+
+/ros_workspace/                    # ROS workspace
+  └── src/
+      └── gps_node_pi/
+
+install_sdk.sh
+launch_system.sh
+LICENSE
+README.md
 ```
 ---
 
