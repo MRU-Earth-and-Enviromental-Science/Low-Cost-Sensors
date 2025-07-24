@@ -50,4 +50,14 @@ else
 fi
 
 echo -e "${GREEN}SDK installation and build complete.${NC}"
+if [ -d "$HOME/Low-Cost-Sensors/ros_workspace" ]; then
+    echo -e "${YELLOW}==> Building Low-Cost-Sensors ros_workspace${NC}"
+    cd "$HOME/Low-Cost-Sensors/ros_workspace"
+    run_cmd catkin_init_workspace
+    run_cmd catkin_make -j3
+else
+    echo -e "${RED}~/Low-Cost-Sensors/ros_workspace directory not found!${NC}"
+    exit 1
+fi
+
 
