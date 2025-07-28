@@ -18,7 +18,7 @@ uint8_t peerAddress[] = {0x10, 0x06, 0x1C, 0xF2, 0x01, 0x50};
 float calculateResistance() {
 
     static float filteredRs = 0;
-    const float alpha = 0.15; // Smoothing factor (0 < alpha <= 1)
+    const float alpha = 0.2; // Smoothing factor (0 < alpha <= 1)
     int adcValue = analogRead(34);
     float voltage = adcValue * (vcc / 4095.0);
     float rs = loadResistor * (vcc - voltage) / voltage;
