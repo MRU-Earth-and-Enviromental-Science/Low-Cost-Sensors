@@ -1,3 +1,9 @@
 [submodule "ground_station/sensor-dashboard"]
-	path = ground_station/sensor-dashboard
-	url = https://github.com/MRU-Earth-and-Enviromental-Science/sensor-dashboard
+    path = ground_station/sensor-dashboard
+    url = https://github.com/MRU-Earth-and-Enviromental-Science/sensor-dashboard
+    branch = mainTesting
+
+[submodule "ros_workspace/src/Onboard-SDK-ROS"]
+    path = ros_workspace/src/Onboard-SDK-ROS
+    url = https://github.com/dji-sdk/Onboard-SDK-ROS.git
+    branch = mainTesting
