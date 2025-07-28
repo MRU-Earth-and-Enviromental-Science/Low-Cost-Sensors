@@ -2,14 +2,19 @@
     <arg name="port" default="/dev/ttyUSB1" />
     <arg name="baud" default="57600" />
 
-    <node name="serial_node" pkg="rosserial_python" type="serial_node.py" output="screen">
+    <!-- Run DJI SDK first -->
+    <include file="$(find dji_osdk_ros)/launch/dji_vehicle_node.launch" />
+
+    <!-- Then rosserial client -->
+    <node name="serial_node" pkg="rosserial_python" type="serial_node" output="screen">
         <param name="port" value="$(arg port)" />
         <param name="baud" value="$(arg baud)" />
     </node>
 
+    <!-- Then your sensor monitor -->
     <node name="sensor_monitor" pkg="sensor_monitor" type="sensor_monitor" output="screen">
         <rosparam>
-            # Sensor monitor node parameters can be added here if needed
+            # Add any needed params
         </rosparam>
     </node>
 </launch>

@@ -1,0 +1,13 @@
+[Unit]
+Description=ROS Sensor System Launch
+After=network.target
+
+[Service]
+Type=simple
+User=shivamwalia
+ExecStart=/home/shivamwalia/Low-Cost-Sensors/bash_scripts/start_sensor_system.sh
+Restart=on-failure
+Environment=ROS_LOG_DIR=/home/shivamwalia/.ros/log
+
+[Install]
+WantedBy=multi-user.target
