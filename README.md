@@ -130,10 +130,16 @@ npm run dev
 
 # in a new terminal, run the following command to start the dashboard
 npm run electron-dev
+
+# to run the backend
+python3 -m venv venv
+source venv/bin/activate # This is a UNIX command for windows run: venv\Scripts\activate
+pip3 install -r requirements.txt
+
+python3 serial_backend.py # Run this in the venv
 ```
 ---
 ## 🧰 Hardware Used
-
 - **ESP32 Dev Module (WROVER-E based)**
 - **Raspberry Pi 3**
 - **K30 CO₂ Sensor**
