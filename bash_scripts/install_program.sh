@@ -148,7 +148,7 @@ git submodule update --recursive --remote
 if [ -d "ros_workspace/src/Onboard-SDK-ROS" ]; then
     log "Onboard-SDK-ROS submodule found."
     cd ros_workspace/src/Onboard-SDK-ROS
-    git checkout mainTesting || git checkout master || log "Using default branch"
+    git checkout main || git checkout mainTesting || log "Using default branch"
     cd "$REPO_DIR"
 else
     error "Onboard-SDK-ROS submodule not found!"
@@ -215,11 +215,9 @@ TEMP_START_SCRIPT="/tmp/start_sensor_system.sh"
 
 sed "s|/home/shivamwalia/Low-Cost-Sensors|$REPO_DIR|g" "$START_SCRIPT" > "$TEMP_START_SCRIPT"
 
-# Copy the updated start script back
 cp "$TEMP_START_SCRIPT" "$START_SCRIPT"
 chmod +x "$START_SCRIPT"
 
-# Install the service
 sudo cp "$TEMP_SERVICE" /etc/systemd/system/sensor_system.service
 
 # Reload systemd and enable the service
