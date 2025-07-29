@@ -9,9 +9,8 @@ This system integrates:
 - Raspberry Pi running ROS Noetic and DJI Onboard SDK
 
 ---
-![License](https://img.shields.io/badge/License-MIT-000000?style=for-the-badge&logo=openaccess&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-000000?style=for-the-badge&logo=openaccess&logoColor=white) \
 ![DJI](https://img.shields.io/badge/DJI-000000?style=for-the-badge&logo=dji&logoColor=white)
-
 ![ROS Noetic](https://img.shields.io/badge/ROS%20Noetic-000000?style=for-the-badge&logo=ROS&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
 ![PlatformIO](https://img.shields.io/badge/PlatformIO-000000?style=for-the-badge&logo=platformio&logoColor=white)
