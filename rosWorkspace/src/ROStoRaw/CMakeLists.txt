@@ -4,6 +4,7 @@ project(ros_to_raw)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  serial
 )
 
 catkin_package()

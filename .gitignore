@@ -4,6 +4,9 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/extensions.json
+.vscode/settings.json
+drone_esp32/.vscode
+ground_station/ground_esp32/.vscode
 Docker/.env
 .DS_Store
 .idea

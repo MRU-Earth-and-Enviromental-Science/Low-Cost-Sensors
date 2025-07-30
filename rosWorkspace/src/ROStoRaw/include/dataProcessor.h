@@ -5,6 +5,11 @@
 #include "std_msgs/Float32.h"
 #include "std_msgs/UInt16.h"
 #include "std_msgs/String.h"
+#include <serial/serial.h>
+#include <sstream>
+#include <iomanip>
+#include <vector>
+#include <cstring>
 
 class DataProcessor
 {
@@ -37,6 +42,26 @@ private:
     float temperature_;
     float humidity_;
 
+    serial::Serial serial_port_;
+    std::string serial_port_name_;
+    int baud_rate_;
+    bool serial_enabled_;
+    bool binary_format_;  // true for binary float, false for string
+
+    struct SensorData {
+        float temperature;
+        float humidity;
+        float ch4;
+        float co2;
+        float tvoc;
+        float co;
+        float nox;
+        float pm1;
+        float pm25;
+        float pm10;
+        uint32_t timestamp;
+    } current_data_;
+
 public:
     DataProcessor();
     ~DataProcessor() = default;
@@ -52,6 +77,12 @@ public:
     void pm25Callback(const std_msgs::UInt16::ConstPtr &msg);
     void pm10Callback(const std_msgs::UInt16::ConstPtr &msg);
     void statusCallback(const std_msgs::String::ConstPtr &msg);
+
+    bool initializeSerial();
+    void sendDataOverSerial();
+    std::string formatDataForSerial();
+    std::vector<uint8_t> formatDataAsBinary();
+    void closeSerial();
 
 private:
     float processTemperature(float raw_temp);
