@@ -5,7 +5,7 @@
 DataProcessor::DataProcessor() : nh_("~"), temperature_(25.0), humidity_(50.0), 
                                 serial_enabled_(false), baud_rate_(115200), binary_format_(true)
 {
-    nh_.param<std::string>("serial_port", serial_port_name_, "/dev/ttyUSB0");
+    nh_.param<std::string>("serial_port", serial_port_name_, "/dev/ttyUSB1");
     nh_.param<int>("baud_rate", baud_rate_, 115200);
     nh_.param<bool>("enable_serial", serial_enabled_, true);
     nh_.param<bool>("binary_format", binary_format_, true);  // true for binary floats, false for string
