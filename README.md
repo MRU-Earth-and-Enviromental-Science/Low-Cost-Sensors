@@ -1,3 +1,68 @@
+# 📡 Serial Data Protocol
+The system sends processed sensor data over serial using a flag-based protocol for easy identification and parsing:
+
+#### **Data Format Structure:**
+```
+[FLAG_BYTE][DATA_PAYLOAD]
+```
+
+#### **Flag Types:**
+- **`0x10`** → Binary Data Format (Structured Packet)
+- **`0x20`** → String Data Format (JSON)
+
+#### **Binary Format (`0x10`):**
+When the flag is `0x10`, the following binary packet structure is transmitted:
+```c
+struct SensorPacket {
+    uint8_t header[4];        // "SENS" 
+    uint32_t timestamp;       // Unix timestamp
+    float temperature;        // °C
+    float humidity;          // %
+    float ch4;               // ppm
+    float co2;               // ppm  
+    float tvoc;              // ppb
+    float co;                // ppm
+    float nox;               // ppm
+    float pm1;               // µg/m³
+    float pm25;              // µg/m³
+    float pm10;              // µg/m³
+    uint16_t checksum;       // Data integrity check
+    uint8_t footer[2];       // "\r\n"
+};
+```
+
+#### **String Format (`0x20`):**
+When the flag is `0x20`, a JSON string follows:
+```json
+{
+  "timestamp": 1691234567,
+  "temperature": 25.50,
+  "humidity": 60.20,
+  "ch4": 1.05,
+  "co2": 450.30,
+  "tvoc": 125.80,
+  "co": 2.10,
+  "nox": 0.85,
+  "pm1": 12.40,
+  "pm25": 15.60,
+  "pm10": 18.90
+}
+```
+
+#### **How to Decode:**
+1. **Read the first byte** to identify the format
+2. **If `0x10`:** Read 58 bytes for the complete binary packet, validate header/footer/checksum
+3. **If `0x20`:** Read characters until newline (`\n`) for the JSON string
+4. **Parse accordingly** based on the format detected
+
+#### **Configuration for RPi:**
+- **Port:** `/dev/ttyUSB1` (configurable via ROS parameter `serial_port`)
+- **Baud Rate:** `115200` (configurable via ROS parameter `baud_rate`)  
+- **Format:** Set via ROS parameter `binary_format` (true=binary, false=string)
+
+
+
+
 # 🌿 Air Quality Sensor
 
 An air quality monitoring system designed for DJI Matrice drones, capable of measuring and logging key environmental parameters: CO<sub>2</sub>, CO, CH<sub>4</sub>, NO<sub>x</sub>, PM<sub>2.5</sub>, VOCs, temperature, and humidity. 
@@ -27,102 +92,14 @@ This system integrates:
   - PM2.5 particulate matter in μg/m<sup>3</sup>
   - VOCs (Volatile Organic Compounds)
   - Temperature (°C) and Humidity (%)
-- Web-based dashboard for live data visualization.
 - PlatformIO-based development environment.
-- ROS Noetic (coming soon) for drone-Pi-ESP communication (via UART)
-- Custom PCB + 3D-printed casing for DJI Matrice 210V2 (compatible with 350RTK)
+- ROS Noetic Pi-ESP communication (via ROS Serial)
 
----
+## 👨‍💻 Software Overview
+- ESP32 gathers sensor data
+- Raspberry Pi receives sensor data from the ESP32 over ROSSerial
+- Raspberry Pi is able to send data to an open serial port (/dev/ttyUSB1) to export data elsewhere
 
-## 🛠️ Getting Started (Software)
-
-### 1. Prerequisites
-- Familiarity with terminal and basic UNIX commands
-- Recommended: Linux host (Windows/Mac supported but requires extra configuration)
-- **Required Tools**
-  - C++ Compiler
-    - Linux: `sudo apt install build-essential`
-    - Windows: Install [MinGW](https://www.mingw-w64.org/) or use WSL
-    - Mac: Xcode Command Line Tools (`xcode-select --install`)
-  - [VSCode](https://code.visualstudio.com/)
-  - [Platform IO Extension](https://platformio.org/install/ide?install=vscode) for VSCode
-  - [Optional] Install [PlatformIO Core CLI](https://docs.platformio.org/en/latest/core/quickstart.html) for terminal-only workflows
-  - [Optional] Docker (https://www.docker.com/get-started/) (for running ROS & DJI SDK in containers, currently not required, for future updates)
-    
-### 2. Clone the Repository on the Machine Used to Deploy to ESP32
-```bash
-git clone https://github.com/MRU-Earth-and-Enviromental-Science/Low-Costs-Sensors-Gas.git
-cd Low-Costs-Sensors-Gas
-code . # Open in VSCode (or editor of your choice)
-```
-### 3. Upload Code to ESP32 on the Drone
-
-- Connect your **ESP32 dev board** via USB.
-- Open the Drone_System Directory on **Visual Studio Code**.
-```bash
-cd path-to-directory/Low-Costs-Sensors-Gas/Drone_System
-``` 
-- Use PlatformIO to build and upload:  
-  - Click the right-facing arrow (➤) at the bottom of VSCode, or  
-  - Use the command palette: `PlatformIO: Upload`  
-
-> PlatformIO will automatically detect your environment and upload the firmware to the board.
-
-### 4. Configure the ESP32 on Ground Station
-```bash
-cd "path-to-directory/Low-Costs-Sensors-Gas/Ground_Station_Reader/Ground Station"
-```
-- Use PlatformIO to build and upload the code to the ESP32.
-
-### 5. Raspberry Pi Set-Up
-- Running any modern Linux Distro (This was developed on Ubuntu 24.04)
-- Clone this repo on the Pi
-```bash
-git clone https://github.com/yourusername/Low-Costs-Sensors-Gas.git
-cd path-to-directory/Low-Costs-Sensors-Gas/Parser_Pi
-```
-- Run install_service.sh script to make it run on boot
-```bash
-chmod +x installService.sh
-./installService.sh
-```
-
-- [Optional] Setup Docker Daemon (if wanting to use DJI OSDK)
-```bash
-sudo apt-get update
-sudo apt-get install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-
-sudo docker run hello-world
-```
-### 6. Setting Up and Running the Dashboard
-- Install the Dashboard from the 'Releases Section' of the GitHub repo linked below for your system.
-  - For **Windows**: Download the `.exe` file.
-  - For **Mac**: Download the `.dmg` file.
-  - For **Linux**: Download the `.AppImage` file and make it executable:
-- Alternatively, you can clone the sensor-dashboard submodule and build from source (must have npm installed):
-```bash
-# Clone the sensor-dashboard submodule
-cd path-to-directory/Low-Costs-Sensors-Gas
-git submodule update --init --recursive
-
-cd Ground_Station_Reader/sensor-dashboard
-
-npm install --legacy-peer-deps
-npm run dev
-
-# in a new terminal, run the following command to start the dashboard
-npm run electron-dev
-```
----
 ## 🧰 Hardware Used
 
 - **ESP32 Dev Module (WROVER-E based)**
@@ -139,55 +116,7 @@ npm run electron-dev
 - STEP and STL Files available
 ---
 
-## 📁 Project Structure
-```
 
-/Docker/                           # Docker-based ROS environment
-  ├── catkin_ws/                   # ROS workspace
-  ├── .dockerignore
-  ├── .env
-  ├── dockerCommands.sh
-  ├── Dockerfile
-  ├── run.sh
-  └── UserConfig.txt
-
-/Drone_System/                     # ESP32 firmware for sensor readings
-  ├── include/
-  ├── lib/
-  ├── src/
-  ├── test/
-  ├── .gitignore
-  └── platformio.ini
-
-/Ground_Station_Reader/            # Ground station receiver and dashboard
-  ├── sensor-dashboard/            # Git submodule: web dashboard frontend: git@github.com:MRU-Earth-and-Enviromental-Science/sensor-dashboard.git
-  └── Ground Station/
-      ├── include/
-      ├── lib/
-      ├── src/
-      ├── test/
-      ├── .gitattributes
-      ├── .gitignore
-      └── platformio.ini
-
-/Hardware/
-  └── Gerber Files.zip/            # Gerber files for PCB
-
-/Mechanical/
-  ├── STEP-Files/                  # 3D models for casing
-  └── STL-Files/                   # STEP files for custom casing
-
-/Parser_Pi/                        # Raspberry Pi GPS parser
-  ├── src/
-  ├── CMakeLists.txt
-  └── runOnBoot.sh
-  
- .gitignore
- .gitmodules
- README.md
- LICENSE
-```
----
 
 ## 📄 License
 This project is licensed under the **MIT License**.
