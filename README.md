@@ -62,9 +62,7 @@ When the flag is `0x20`, a JSON string follows:
 
 
 
-
-# 🌿 Air Quality Sensor
-
+# Ignore below this
 An air quality monitoring system designed for DJI Matrice drones, capable of measuring and logging key environmental parameters: CO<sub>2</sub>, CO, CH<sub>4</sub>, NO<sub>x</sub>, PM<sub>2.5</sub>, VOCs, temperature, and humidity. 
 
 This system integrates:
@@ -81,7 +79,6 @@ This system integrates:
 ![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=white)
 
-## IGNORE ALL DOCKER FOR NOW
 
 ## 🚀 Features
 - Real-time measurements of:
