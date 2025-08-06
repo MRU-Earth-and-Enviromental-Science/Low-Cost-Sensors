@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ros_to_raw</name>
+  <name>ros_to_serial</name>
   <version>0.0.1</version>
   <description>Takes the incoming sensor data and converts it to raw to be sent elsewhere</description>
   <maintainer email="shivamwalia2006@gmail.com">Shivam Walia</maintainer>

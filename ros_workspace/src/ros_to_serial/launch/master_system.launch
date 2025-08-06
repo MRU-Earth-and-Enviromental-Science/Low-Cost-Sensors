@@ -4,7 +4,7 @@
     <arg name="enableDebug" default="true" doc="Enable debug output" />
     <arg name="sensorRate" default="1.0" doc="Sensor reading rate in Hz" />
 
-    <rosparam param="sensorSystem">
+    <rosparam param="sensor_system">
         sensorRate: $(arg sensorRate)
         debugMode: $(arg enableDebug)
         calibration:
@@ -14,7 +14,7 @@
           co_sensitivity: 0.98
           pm_density_correction: 1.02
     </rosparam>
-    <node name="esp32SerialBridge"
+    <node name="esp32_serial_bridge"
         pkg="rosserial_python"
         type="serial_node.py"
         output="screen"
@@ -25,9 +25,9 @@
         <param name="timeout" value="5.0" />
     </node>
 
-    <node name="gpsSystemMonitor"
+    <node name="gps_system_monitor"
         pkg="gps_node_pi"
-        type="sensorMonitor"
+        type="gps_node_pi"
         output="screen"
         respawn="true"
         respawn_delay="3">
@@ -35,8 +35,8 @@
         <param name="debug" value="$(arg enableDebug)" />
     </node>
 
-    <node name="rawDataProcessor"
-        pkg="ros_to_raw"
+    <node name="raw_data_processor"
+        pkg="ros_to_serial"
         type="data_processor"
         output="screen"
         respawn="true"
@@ -45,24 +45,6 @@
         <param name="debug" value="$(arg enableDebug)" />
         <remap from="~temperature_offset" to="/sensorSystem/calibration/temperature_offset" />
     </node>
-
-    <node name="systemHealthMonitor"
-        pkg="diagnostic_aggregator"
-        type="aggregator_node"
-        output="screen">
-        <rosparam>
-            analyzers:
-              sensors:
-                type: diagnostic_aggregator/GenericAnalyzer
-                path: Sensors
-                contains: ['/sensors']
-              processing:
-                type: diagnostic_aggregator/GenericAnalyzer
-                path: Processing
-                contains: ['/processed']
-        </rosparam>
-    </node>
-
 
     <param name="launchInfo"
         value="Low-Cost Sensors System - ESP32 Port: $(arg esp32Port), Rate: $(arg sensorRate)Hz" />
