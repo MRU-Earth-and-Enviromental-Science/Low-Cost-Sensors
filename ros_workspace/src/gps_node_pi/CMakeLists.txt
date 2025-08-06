@@ -13,5 +13,5 @@ include_directories(
 )
 
 
-add_executable(sensorMonitor src/gpsNodePi.cpp)
-target_link_libraries(sensorMonitor ${catkin_LIBRARIES})
+add_executable(gps_node_pi src/gps_node_pi.cpp)
+target_link_libraries(gps_node_pi ${catkin_LIBRARIES})

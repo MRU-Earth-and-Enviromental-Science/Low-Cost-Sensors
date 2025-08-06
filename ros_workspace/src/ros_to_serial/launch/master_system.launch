@@ -37,7 +37,7 @@
 
     <node name="rawDataProcessor"
         pkg="ros_to_raw"
-        type="dataProcessor"
+        type="data_processor"
         output="screen"
         respawn="true"
         respawn_delay="3">

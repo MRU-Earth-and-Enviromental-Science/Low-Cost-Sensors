@@ -14,5 +14,5 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(dataProcessor src/dataProcessor.cpp)
-target_link_libraries(dataProcessor ${catkin_LIBRARIES})
+add_executable(data_processor src/data_processor.cpp)
+target_link_libraries(data_processor ${catkin_LIBRARIES})
