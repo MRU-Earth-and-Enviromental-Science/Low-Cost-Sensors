@@ -336,13 +336,21 @@ void DataProcessor::sendDataOverSerial()
 
     try {
         if (binary_format_) {
-            // Send binary float data
             std::vector<uint8_t> binary_data = formatDataAsBinary();
-            serial_port_.write(binary_data);
+            
+            std::vector<uint8_t> flagged_data;
+            flagged_data.push_back(0x10);
+            flagged_data.insert(flagged_data.end(), binary_data.begin(), binary_data.end());
+            
+            serial_port_.write(flagged_data);
         } else {
-            // Send string data
             std::string data = formatDataForSerial();
-            serial_port_.write(data);
+            
+            std::vector<uint8_t> flagged_data;
+            flagged_data.push_back(0x20);
+            flagged_data.insert(flagged_data.end(), data.begin(), data.end());
+            
+            serial_port_.write(flagged_data);
         }
         serial_port_.flushOutput();
     } catch (serial::IOException& e) {
@@ -355,7 +363,6 @@ std::string DataProcessor::formatDataForSerial()
 {
     std::ostringstream oss;
     
-    // Format 1: JSON-like format
     oss << std::fixed << std::setprecision(2);
     oss << "{"
         << "\"timestamp\":" << current_data_.timestamp << ","
@@ -371,40 +378,6 @@ std::string DataProcessor::formatDataForSerial()
         << "\"pm10\":" << current_data_.pm10
         << "}\n";
 
-    // Alternative Format 2: CSV format (uncomment if preferred)
-    /*
-    oss << std::fixed << std::setprecision(2);
-    oss << current_data_.timestamp << ","
-        << current_data_.temperature << ","
-        << current_data_.humidity << ","
-        << current_data_.ch4 << ","
-        << current_data_.co2 << ","
-        << current_data_.tvoc << ","
-        << current_data_.co << ","
-        << current_data_.nox << ","
-        << current_data_.pm1 << ","
-        << current_data_.pm25 << ","
-        << current_data_.pm10 << "\n";
-    */
-
-    // Alternative Format 3: NMEA-like format (uncomment if preferred)
-    /*
-    oss << std::fixed << std::setprecision(2);
-    oss << "$SENSOR,"
-        << current_data_.timestamp << ","
-        << current_data_.temperature << ","
-        << current_data_.humidity << ","
-        << current_data_.ch4 << ","
-        << current_data_.co2 << ","
-        << current_data_.tvoc << ","
-        << current_data_.co << ","
-        << current_data_.nox << ","
-        << current_data_.pm1 << ","
-        << current_data_.pm25 << ","
-        << current_data_.pm10 
-        << "*XX\r\n";  // XX would be checksum in real NMEA
-    */
-
     return oss.str();
 }
 
@@ -412,7 +385,6 @@ std::vector<uint8_t> DataProcessor::formatDataAsBinary()
 {
     std::vector<uint8_t> binary_data;
     
-    // Define a packet structure for binary transmission
     struct __attribute__((packed)) SensorPacket {
         uint8_t header[4];        // Packet header: "SENS"
         uint32_t timestamp;       // 4 bytes
@@ -427,7 +399,7 @@ std::vector<uint8_t> DataProcessor::formatDataAsBinary()
         float pm25;              // 4 bytes
         float pm10;              // 4 bytes
         uint16_t checksum;       // 2 bytes CRC
-        uint8_t footer[2];       // Packet footer: "\r\n"
+        uint8_t footer[2];
     };
     
     SensorPacket packet;

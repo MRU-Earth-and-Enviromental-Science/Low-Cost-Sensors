@@ -38,7 +38,7 @@ SENSOR_SYSTEM_LOG="$LOG_DIR/sensor_system.log"
 SYSTEM_LOG="$LOG_DIR/system.log"
 
 # ESP32 Configuration (auto-detect or set manually)
-ESP32_PORT=""
+ESP32_PORT="/dev/ttyUSB1"
 ESP32_BAUD="115200"
 
 # Logging function
@@ -105,8 +105,8 @@ wait_for_rosmaster() {
 detect_esp32_port() {
     log "Auto-detecting ESP32 port..."
     
-    # Common ESP32 ports
-    local ports=("/dev/ttyUSB0" "/dev/ttyUSB1" "/dev/ttyACM0" "/dev/ttyACM1")
+    # Prioritize ttyUSB1, then other common ports
+    local ports=("/dev/ttyUSB1" "/dev/esp32-sensor" "/dev/ttyUSB0" "/dev/ttyUSB2" "/dev/ttyACM0" "/dev/ttyACM1")
     
     for port in "${ports[@]}"; do
         if [ -e "$port" ]; then
@@ -287,6 +287,13 @@ show_status() {
     echo "  System: $SYSTEM_LOG"
     echo "  ROS Core: $ROSCORE_LOG"
     echo "  Sensor System: $SENSOR_SYSTEM_LOG"
+    echo "==============================================================================="
+    echo ""
+    echo "Debug commands:"
+    echo "  Monitor serial port: cat $ESP32_PORT"
+    echo "  Monitor ROS topics: rostopic list"
+    echo "  Check sensor data: rostopic echo /processed/temperature"
+    echo "  View system logs: tail -f $SYSTEM_LOG"
     echo "==============================================================================="
 }
 
