@@ -5,27 +5,29 @@
 
 const int channel = 6;
 
-float latestResistance = 0.0;
-unsigned long lastResistanceTime = 0;
+
+struct SensorData {
+  int co_ppm;
+};
+
+SensorData latestData = {0};
+unsigned long lastDataTime = 0;
 
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
-  if (len == sizeof(float))
-  {
-    float resistance;
-    memcpy(&resistance, incomingData, sizeof(float));
-    latestResistance = resistance;
-    lastResistanceTime = millis();
-    
+  if (len == sizeof(SensorData)) {
+    SensorData data;
+    memcpy(&data, incomingData, sizeof(SensorData));
+    latestData = data;
+    lastDataTime = millis();
+
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    
-    Serial.printf("[ESP-NOW] Resistance from %s: %.2f ohms\n", macStr, resistance);
-  }
-  else
-  {
-    Serial.printf("[ESP-NOW] Invalid data size: %d bytes (expected %d)\n", len, sizeof(float));
+
+    Serial.printf("[ESP-NOW] CO data from %s: %d ppm\n", macStr, data.co_ppm);
+  } else {
+    Serial.printf("[ESP-NOW] Invalid data size: %d bytes (expected %d)\n", len, sizeof(SensorData));
   }
 }
 
@@ -65,32 +67,27 @@ void setup()
   }
 
   esp_now_register_recv_cb(OnDataRecv);
-  Serial.println("ESP-NOW resistance receiver started");
+  Serial.println("ESP-NOW CO sensor receiver started");
 }
 
 void loop()
 {
   static unsigned long lastLog = 0;
-  if (millis() - lastLog > 5000)
-  {
+  if (millis() - lastLog > 5000) {
     Serial.println("\n=== Status Report ===");
-    
-    if (lastResistanceTime > 0)
-    {
-      unsigned long timeSinceResistance = millis() - lastResistanceTime;
-      Serial.printf("Latest Resistance: %.2f ohms (%.1fs ago)\n", 
-                    latestResistance, timeSinceResistance / 1000.0);
-      
-      if (timeSinceResistance > 10000) // No data for 10 seconds
-      {
-        Serial.println("⚠️  WARNING: No recent resistance data!");
+
+    if (lastDataTime > 0) {
+      unsigned long timeSinceData = millis() - lastDataTime;
+      Serial.printf("Latest CO: %d ppm\n", latestData.co_ppm);
+      Serial.printf("(%.1fs ago)\n", timeSinceData / 1000.0);
+
+      if (timeSinceData > 10000) {
+        Serial.println("⚠️  WARNING: No recent sensor data!");
       }
+    } else {
+      Serial.println("No sensor data received yet");
     }
-    else
-    {
-      Serial.println("No resistance data received yet");
-    }
-    
+
     Serial.println("Waiting for ESP-NOW data...");
     lastLog = millis();
   }
