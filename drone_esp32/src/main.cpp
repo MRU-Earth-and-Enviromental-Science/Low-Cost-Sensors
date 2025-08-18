@@ -29,16 +29,16 @@ bool senderConnected = false;
 Adafruit_SGP30 sgp;
 bool sgp_initialized = false;
 
-// Pi to ESP32 UART
-constexpr int RX_PIN = 4;
-constexpr int TX_PIN = 5;
-constexpr uint32_t BAUD_UART = 115200;
+// Pi to ESP32 UART - COMMENTED OUT: Using USB-C port for ROS communication
+// constexpr int RX_PIN = 4;
+// constexpr int TX_PIN = 5;
+// constexpr uint32_t BAUD_UART = 115200;
 
 String lineBuffer;
 
 // MAC Address receiver
-uint8_t broadcastAddress[] = {0x10, 0x06, 0x1C, 0xF2, 0x01, 0x50}; // Replace with correct receiver MAC
-
+uint8_t broadcastAddress[] = {0x88, 0x13, 0xbf, 0x82, 0x19, 0x94}; // Replace with correct receiver MAC
+//88:13:bf:82:19:94
 // Struct to hold sensor data
 typedef struct __attribute__((packed))
 {
@@ -58,6 +58,10 @@ typedef struct __attribute__((packed))
 
 // Global sensor data object
 SensorData sensorData;
+
+// Add ROS connection tracking
+bool ros_connected = false;
+unsigned long last_connection_check = 0;
 
 ros::NodeHandle nh;
 
@@ -204,12 +208,33 @@ void sendData()
     // Serial.printf("ESP-NOW send error: %d\n", result);
 }
 
+void checkRosConnection()
+{
+    static bool last_state = false;
+    ros_connected = nh.connected();
+    
+    if (ros_connected != last_state)
+    {
+        if (ros_connected)
+        {
+            Serial.println("✓ ROS Connected");
+            oledPrint("ROS Connected");
+        }
+        else
+        {
+            Serial.println("✗ ROS Disconnected");
+            oledPrint("ROS Disconnected");
+        }
+        last_state = ros_connected;
+    }
+}
+
 void setup()
 {
     Serial.begin(115200);
     WiFi.mode(WIFI_STA);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
-    esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE); // Ensure sender and receiver are on the same channel
+    esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
     // Serial.println("ESP-NOW in Long-Range mode");
 
     if (esp_now_init() != ESP_OK)
@@ -239,10 +264,7 @@ void setup()
     // Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
     Serial1.begin(9600, SERIAL_8N1, 4, -1);
 
-    delay(100);
-    Serial2.begin(BAUD_UART, SERIAL_8N1, RX_PIN, TX_PIN);
-    // Serial.printf("UART2 listening on GPIO %d (RX) @ %lu baud\n",
-    //               RX_PIN, BAUD_UART);
+    // REMOVED: Serial2.begin() - Using USB-C port (Serial) for ROS communication
 
     if (!pms7003.init(&Serial1))
         oledPrint("PMS FAIL");
@@ -272,19 +294,58 @@ void setup()
     delay(500);
     oledPrint("System Ready");
 
+    Serial.println("Initializing ROS node...");
     nh.initNode();
+    Serial.println("Subscribing to GPS topics...");
     nh.subscribe(gps_sub);
     nh.subscribe(health_sub);
+    
+    // Wait for initial ROS connection
+    Serial.println("Waiting for ROS connection...");
+    oledPrint("Waiting for ROS...");
+    unsigned long start_time = millis();
+    while (!nh.connected() && (millis() - start_time < 10000)) // 10 second timeout
+    {
+        nh.spinOnce();
+        delay(100);
+    }
+    
+    if (nh.connected())
+    {
+        Serial.println("✓ ROS Initial connection established");
+        oledPrint("ROS Ready");
+    }
+    else
+    {
+        Serial.println("✗ ROS connection timeout");
+        oledPrint("ROS Timeout");
+    }
 }
 
 void loop()
 {
     // readPiData();
     nh.spinOnce();
+    
+    // Check ROS connection status every 5 seconds
+    if (millis() - last_connection_check > 5000)
+    {
+        checkRosConnection();
+        last_connection_check = millis();
+        
+        // Debug output
+        Serial.printf("ROS Connected: %s, GPS Valid: %s\n", 
+                     ros_connected ? "YES" : "NO",
+                     (!isnan(gps_data.latitude) && !isnan(gps_data.longitude)) ? "YES" : "NO");
+    }
+    
     static unsigned long lastSend = 0;
     if (millis() - lastSend > 1000)
     {
         sendData();
+        lastSend = millis();
+    }
+}
         lastSend = millis();
     }
 }
