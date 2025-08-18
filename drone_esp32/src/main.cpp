@@ -346,6 +346,3 @@ void loop()
         lastSend = millis();
     }
 }
-        lastSend = millis();
-    }
-}
