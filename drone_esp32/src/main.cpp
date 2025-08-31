@@ -1,191 +1,114 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include <esp_now.h>
-#include <esp_wifi.h>
-#include <SPI.h>
-#include <Wire.h>
-#include "../include/Temp.h"
-#include "../include/CH4.h"
-#include "../include/CO.h"
-//#include "../include/NOx.h"
+// #include <esp_now.h>
+// #include <WiFi.h>
+// #include <cstring>
 
-/************************Hardware Related Macros************************************/
-#define         MQ_PIN                       (34)     //define which analog input channel you are going to use
-#define         MQ_RL_VALUE                  (10)     //define the load resistance on the board, in kilo ohms
-#define         RO_CLEAN_AIR_FACTOR          (9.83)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/RO,
-                                                     //which is derived from the chart in datasheet
- 
-/***********************Software Related Macros************************************/
-#define         CALIBARAION_SAMPLE_TIMES     (50)    //define how many samples you are going to take in the calibration phase
-#define         CALIBRATION_SAMPLE_INTERVAL  (500)   //define the time interal(in milisecond) between each samples in the
-                                                     //cablibration phase
-#define         READ_SAMPLE_INTERVAL         (50)    //define how many samples you are going to take in normal operation
-#define         READ_SAMPLE_TIMES            (5)     //define the time interal(in milisecond) between each samples in 
-                                                     //normal operation
- 
-/**********************Application Related Macros**********************************/
-#define         GAS_LPG                      (0)
-#define         GAS_CO                       (1)
-#define         GAS_SMOKE                    (2)
- 
-/*****************************Globals***********************************************/
-float           LPGCurve[3]  =  {2.3,0.21,-0.47};   //two points are taken from the curve. 
-                                                    //with these two points, a line is formed which is "approximately equivalent"
-                                                    //to the original curve. 
-                                                    //data format:{ x, y, slope}; point1: (lg200, 0.21), point2: (lg10000, -0.59) 
-float           COCurve[3]  =  {2.3,0.72,-0.34};    //two points are taken from the curve. 
-                                                    //with these two points, a line is formed which is "approximately equivalent" 
-                                                    //to the original curve.
-                                                    //data format:{ x, y, slope}; point1: (lg200, 0.72), point2: (lg10000,  0.15) 
-float           SmokeCurve[3] ={2.3,0.53,-0.44};    //two points are taken from the curve. 
-                                                    //with these two points, a line is formed which is "approximately equivalent" 
-                                                    //to the original curve.
-                                                    //data format:{ x, y, slope}; point1: (lg200, 0.53), point2: (lg10000,  -0.22)                                                     
-float           Ro           =  10;                 //Ro is initialized to 10 kilo ohms
+// // MAC of the receiver (K-30 side ESP32)
+// uint8_t receiverMac[] = {0xCC, 0x7B, 0x5C, 0x97, 0x46, 0x7C};
 
-uint8_t peerAddress[] = {0x10, 0x06, 0x1C, 0xF2, 0x01, 0x50};
+// // Default transistor peer MAC (placeholder - set via Serial with SETMAC:aa:bb:cc:dd:ee:ff)
+// uint8_t transistorMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+// bool transistorPeerAdded = false;
 
-struct SensorData {
-    int co_ppm;
-};
+// // Callback to receive confirmation from receiver or ACK from transistor
+// void onDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+//   String msg;
+//   for (int i = 0; i < len; i++) msg += (char)incomingData[i];
+//   Serial.print("Received: "); Serial.println(msg);
+// }
 
-/****************** MQResistanceCalculation ****************************************
-Input:   raw_adc - raw value read from adc, which represents the voltage
-Output:  the calculated sensor resistance
-Remarks: The sensor and the load resistor forms a voltage divider. Given the voltage
-         across the load resistor and its resistance, the resistance of the sensor
-         could be derived.
-************************************************************************************/ 
-float MQResistanceCalculation(int raw_adc)
-{
-  return ( ((float)MQ_RL_VALUE*(4095-raw_adc)/raw_adc));
-}
- 
-/***************************** MQCalibration ****************************************
-Input:   mq_pin - analog channel
-Output:  Ro of the sensor
-Remarks: This function assumes that the sensor is in clean air. It use  
-         MQResistanceCalculation to calculates the sensor resistance in clean air 
-         and then divides it with RO_CLEAN_AIR_FACTOR. RO_CLEAN_AIR_FACTOR is about 
-         10, which differs slightly between different sensors.
-************************************************************************************/ 
-float MQCalibration(int mq_pin)
-{
-  int i;
-  float val=0;
- 
-  for (i=0;i<CALIBARAION_SAMPLE_TIMES;i++) {            //take multiple samples
-    val += MQResistanceCalculation(analogRead(mq_pin));
-    delay(CALIBRATION_SAMPLE_INTERVAL);
-  }
-  val = val/CALIBARAION_SAMPLE_TIMES;                   //calculate the average value
- 
-  val = val/RO_CLEAN_AIR_FACTOR;                        //divided by RO_CLEAN_AIR_FACTOR yields the Ro 
-                                                        //according to the chart in the datasheet 
- 
-  return val; 
-}
-/*****************************  MQRead *********************************************
-Input:   mq_pin - analog channel
-Output:  Rs of the sensor
-Remarks: This function use MQResistanceCalculation to caculate the sensor resistenc (Rs).
-         The Rs changes as the sensor is in the different consentration of the target
-         gas. The sample times and the time interval between samples could be configured
-         by changing the definition of the macros.
-************************************************************************************/ 
-float MQRead(int mq_pin)
-{
-  int i;
-  float rs=0;
- 
-  for (i=0;i<READ_SAMPLE_TIMES;i++) {
-    rs += MQResistanceCalculation(analogRead(mq_pin));
-    delay(READ_SAMPLE_INTERVAL);
-  }
- 
-  rs = rs/READ_SAMPLE_TIMES;
- 
-  return rs;  
-}
+// // Helper to add an ESP-NOW peer
+// esp_err_t addPeer(const uint8_t *peerAddr) {
+//   esp_now_peer_info_t peerInfo = {};
+//   memcpy(peerInfo.peer_addr, peerAddr, 6);
+//   peerInfo.channel = 0;
+//   peerInfo.encrypt = false;
+//   return esp_now_add_peer(&peerInfo);
+// }
 
-/*****************************  MQGetPercentage **********************************
-Input:   rs_ro_ratio - Rs divided by Ro
-         pcurve      - pointer to the curve of the target gas
-Output:  ppm of the target gas
-Remarks: By using the slope and a point of the line. The x(logarithmic value of ppm) 
-         of the line could be derived if y(rs_ro_ratio) is provided. As it is a 
-         logarithmic coordinate, power of 10 is used to convert the result to non-logarithmic 
-         value.
-************************************************************************************/ 
-int  MQGetPercentage(float rs_ro_ratio, float *pcurve)
-{
-  return (pow(10,( ((log(rs_ro_ratio)-pcurve[1])/pcurve[2]) + pcurve[0])));
-}
- 
-/*****************************  MQGetGasPercentage **********************************
-Input:   rs_ro_ratio - Rs divided by Ro
-         gas_id      - target gas type
-Output:  ppm of the target gas
-Remarks: This function passes different curves to the MQGetPercentage function which 
-         calculates the ppm (parts per million) of the target gas.
-************************************************************************************/ 
-int MQGetGasPercentage(float rs_ro_ratio, int gas_id)
-{
-  if ( gas_id == GAS_LPG ) {
-     return MQGetPercentage(rs_ro_ratio,LPGCurve);
-  } else if ( gas_id == GAS_CO ) {
-     return MQGetPercentage(rs_ro_ratio,COCurve);
-  } else if ( gas_id == GAS_SMOKE ) {
-     return MQGetPercentage(rs_ro_ratio,SmokeCurve);
-  }    
- 
-  return 0;
-}
+// // Send single-byte command to transistor ESP
+// void sendTransistorCommand(uint8_t v) {
+//   if (!transistorPeerAdded) {
+//     Serial.println("Transistor peer not added. Use SETMAC:aa:bb:cc:dd:ee:ff to set and add.");
+//     return;
+//   }
+//   esp_err_t res = esp_now_send(transistorMac, &v, 1);
+//   if (res == ESP_OK) {
+//     Serial.printf("Sent transistor command %d\n", v);
+//   } else {
+//     Serial.printf("Failed to send transistor command: %d\n", res);
+//   }
+// }
 
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-    // Silent callback - no serial output
-}
+// void setup() {
+//   Serial.begin(115200);
+//   WiFi.mode(WIFI_STA);
 
-void setup() {
-    Serial.begin(115200);                               //UART setup, baudrate = 115200bps
-    dht.begin(); // Initialize DHT sensor
-    WiFi.mode(WIFI_STA);
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); // Enable long range
-    esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE); // Set channel (must match receiver)
+//   if (esp_now_init() != ESP_OK) {
+//     Serial.println("Error initializing ESP-NOW");
+//     return;
+//   }
 
-    if (esp_now_init() != ESP_OK) {
-        while (1);
-    }
-    esp_now_register_send_cb(OnDataSent);
+//   // Register receive callback
+//   esp_now_register_recv_cb(onDataRecv);
 
-    esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, peerAddress, 6);
-    peerInfo.channel = 6;
-    peerInfo.encrypt = false;
-    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-        while (1);
-    }
-    
-    Serial.print("Calibrating...\n");                
-    Ro = MQCalibration(MQ_PIN);                       //Calibrating the sensor. Please make sure the sensor is in clean air 
-                                                    //when you perform the calibration                    
-    Serial.print("Calibration is done...\n"); 
-    Serial.print("Ro=");
-    Serial.print(Ro);
-    Serial.print("kohm");
-    Serial.print("\n");
-}
+//   if (addPeer(receiverMac) != ESP_OK) {
+//     Serial.println("Failed to add K30 receiver peer");
+//   } else {
+//     Serial.println("Added K30 receiver peer");
+//   }
 
-void loop() {
-    int co_ppm = MQGetGasPercentage(MQRead(MQ_PIN)/Ro,GAS_CO);
-    
-    SensorData data;
-    data.co_ppm = co_ppm;
-    
-    Serial.print("CO: ");
-    Serial.print(co_ppm);
-    Serial.println(" ppm");
-    
-    esp_now_send(peerAddress, (uint8_t *)&data, sizeof(data));
-    delay(1000);
-}
+//   // If transistorMac was pre-configured (not all 0xFF), attempt to add
+//   uint8_t allFF[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+//   if (memcmp(transistorMac, allFF, 6) != 0) {
+//     if (addPeer(transistorMac) == ESP_OK) transistorPeerAdded = true;
+//   }
+
+//   Serial.println("Sender ready. Commands:");
+//   Serial.println("  ENTER -> send CALIB2000");
+//   Serial.println("  TRANSISTOR:0 or TRANSISTOR:1 -> forward to transistor ESP");
+//   Serial.println("  SETMAC:aa:bb:cc:dd:ee:ff -> set transistor MAC and add peer");
+// }
+
+// void loop() {
+//   static String line;
+//   while (Serial.available()) {
+//     char c = Serial.read();
+//     if (c == '\n' || c == '\r') {
+//       if (line.length() == 0) { // ENTER -> trigger calibration
+//         const char msg[] = "CALIB2000";
+//         esp_err_t result = esp_now_send(receiverMac, (uint8_t *)msg, sizeof(msg));
+//         if (result == ESP_OK) {
+//           Serial.println("Sent calibration trigger.");
+//         } else {
+//           Serial.printf("Error sending message: %d\n", result);
+//         }
+//       } else {
+//         if (line.startsWith("TRANSISTOR:")) {
+//           String val = line.substring(strlen("TRANSISTOR:"));
+//           val.trim();
+//           if (val == "1") sendTransistorCommand(1);
+//           else if (val == "0") sendTransistorCommand(0);
+//           else Serial.println("Invalid TRANSISTOR value. Use 0 or 1.");
+//         } else if (line.startsWith("SETMAC:")) {
+//           String macs = line.substring(7);
+//           // normalize
+//           macs.replace(':', ' ');
+//           int parts[6];
+//           if (sscanf(macs.c_str(), "%x %x %x %x %x %x", &parts[0], &parts[1], &parts[2], &parts[3], &parts[4], &parts[5]) == 6) {
+//             for (int i=0;i<6;i++) transistorMac[i] = (uint8_t)parts[i];
+//             if (addPeer(transistorMac) == ESP_OK) {
+//               transistorPeerAdded = true;
+//               Serial.println("Transistor peer added.");
+//             } else Serial.println("Failed to add transistor peer.");
+//           } else Serial.println("Invalid MAC format. Use aa:bb:cc:dd:ee:ff");
+//         } else {
+//           Serial.print("Unknown command: "); Serial.println(line);
+//         }
+//       }
+//       line = "";
+//     } else {
+//       line += c;
+//     }
+//   }
+//   delay(10);
+// }
