@@ -1,4 +1,6 @@
 #include <Arduino.h>
+
+// libraries for sensors, ros
 #include <ros.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <std_msgs/UInt8.h>
@@ -8,6 +10,8 @@
 #include <WebServer.h>
 #include <SPI.h>
 #include <Wire.h>
+
+// header files
 #include "../include/OLED.h"
 #include "../include/Temp.h"
 #include "../include/CH4.h"
@@ -37,9 +41,9 @@ bool sgp_initialized = false;
 String lineBuffer;
 
 // MAC Address receiver
-uint8_t broadcastAddress[] = {0x88, 0x13, 0xbf, 0x82, 0x19, 0x94}; // Replace with correct receiver MAC
-//88:13:bf:82:19:94
-// Struct to hold sensor data
+uint8_t broadcastAddress[] = {0x88, 0x13, 0xbf, 0x82, 0x46, 0x3c}; // Replace with correct receiver MAC
+// 88:13:bf:82:19:94
+//  Struct to hold sensor data
 typedef struct __attribute__((packed))
 {
     float temp;
@@ -212,7 +216,7 @@ void checkRosConnection()
 {
     static bool last_state = false;
     ros_connected = nh.connected();
-    
+
     if (ros_connected != last_state)
     {
         if (ros_connected)
@@ -299,7 +303,7 @@ void setup()
     Serial.println("Subscribing to GPS topics...");
     nh.subscribe(gps_sub);
     nh.subscribe(health_sub);
-    
+
     // Wait for initial ROS connection
     Serial.println("Waiting for ROS connection...");
     oledPrint("Waiting for ROS...");
@@ -309,7 +313,7 @@ void setup()
         nh.spinOnce();
         delay(100);
     }
-    
+
     if (nh.connected())
     {
         Serial.println("✓ ROS Initial connection established");
@@ -326,19 +330,19 @@ void loop()
 {
     // readPiData();
     nh.spinOnce();
-    
+
     // Check ROS connection status every 5 seconds
     if (millis() - last_connection_check > 5000)
     {
         checkRosConnection();
         last_connection_check = millis();
-        
+
         // Debug output
-        Serial.printf("ROS Connected: %s, GPS Valid: %s\n", 
-                     ros_connected ? "YES" : "NO",
-                     (!isnan(gps_data.latitude) && !isnan(gps_data.longitude)) ? "YES" : "NO");
+        Serial.printf("ROS Connected: %s, GPS Valid: %s\n",
+                      ros_connected ? "YES" : "NO",
+                      (!isnan(gps_data.latitude) && !isnan(gps_data.longitude)) ? "YES" : "NO");
     }
-    
+
     static unsigned long lastSend = 0;
     if (millis() - lastSend > 1000)
     {
