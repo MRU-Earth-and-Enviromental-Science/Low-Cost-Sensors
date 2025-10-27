@@ -1,42 +1,128 @@
-# 🌿 Air Quality Sensor
+<div align="center">
 
-An air quality monitoring system designed for DJI Matrice drones, capable of measuring and logging key environmental parameters: CO<sub>2</sub>, CO, CH<sub>4</sub>, NO<sub>x</sub>, PM<sub>2.5</sub>, VOCs, temperature, and humidity. 
+```
+╔═════════════════════════════════════════════════════════════════════════╗
+║                                                                         ║
+║     ██╗      ██████╗ ██╗    ██╗      ██████╗ ██████╗ ███████╗████████╗  ║
+║     ██║     ██╔═══██╗██║    ██║     ██╔════╝██╔═══██╗██╔════╝╚══██╔══╝  ║
+║     ██║     ██║   ██║██║ █╗ ██║     ██║     ██║   ██║███████╗   ██║     ║
+║     ██║     ██║   ██║██║███╗██║     ██║     ██║   ██║╚════██║   ██║     ║
+║     ███████╗╚██████╔╝╚███╔███╔╝     ╚██████╗╚██████╔╝███████║   ██║     ║
+║     ╚══════╝ ╚═════╝  ╚══╝╚══╝       ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝     ║
+║                                                                         ║
+║       ███████╗███████╗███╗   ██╗███████╗ ██████╗ ██████╗ ███████╗       ║
+║       ██╔════╝██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗██╔════╝       ║
+║       ███████╗█████╗  ██╔██╗ ██║███████╗██║   ██║██████╔╝███████╗       ║
+║       ╚════██║██╔══╝  ██║╚██╗██║╚════██║██║   ██║██╔══██╗╚════██║       ║
+║       ███████║███████╗██║ ╚████║███████║╚██████╔╝██║  ██║███████║       ║
+║       ╚══════╝╚══════╝╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝       ║
+║                                                                         ║
+║             DRONE-BASED AIR QUALITY MONITORING SYSTEM                   ║
+║                                                                         ║
+╚═════════════════════════════════════════════════════════════════════════╝
+```
 
-This system integrates:
-- An ESP32 for real-time sensor data acquisition
-- ESP-NOW for wireless transmission to a ground station
-- A web dashboard for live monitoring and CSV export
-- Raspberry Pi running ROS Noetic and DJI Onboard SDK
+### 🚁 Real-time Environmental Monitoring from the Sky
+
+**Measure. Monitor. Protect.** A cutting-edge air quality monitoring system designed for DJI Matrice drones, capable of measuring and logging key environmental parameters in real-time.
+
+[![License](https://img.shields.io/badge/License-MIT-00D9FF?style=for-the-badge&logo=openaccess&logoColor=white)](LICENSE)
+[![DJI](https://img.shields.io/badge/DJI_Matrice-131313?style=for-the-badge&logo=dji&logoColor=white)](https://www.dji.com/matrice)
+[![ROS Noetic](https://img.shields.io/badge/ROS_Noetic-22314E?style=for-the-badge&logo=ROS&logoColor=white)](https://www.ros.org/)
+[![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge)](https://github.com/MRU-Earth-and-Enviromental-Science)
 
 ---
-![License](https://img.shields.io/badge/License-MIT-000000?style=for-the-badge&logo=openaccess&logoColor=white) \
-![DJI](https://img.shields.io/badge/DJI-000000?style=for-the-badge&logo=dji&logoColor=white)
-![ROS Noetic](https://img.shields.io/badge/ROS%20Noetic-000000?style=for-the-badge&logo=ROS&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-000000?style=for-the-badge&logo=linux&logoColor=white)
-![PlatformIO](https://img.shields.io/badge/PlatformIO-000000?style=for-the-badge&logo=platformio&logoColor=white)
-![ESP32](https://img.shields.io/badge/ESP32-000000?style=for-the-badge&logo=espressif&logoColor=white)
-![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-000000?style=for-the-badge&logo=raspberrypi&logoColor=white)
-![C++](https://img.shields.io/badge/C++-000000?style=for-the-badge&logo=cplusplus&logoColor=white)
-![Python](https://img.shields.io/badge/Python-000000?style=for-the-badge&logo=python&logoColor=white)
-![Bash](https://img.shields.io/badge/Bash-000000?style=for-the-badge&logo=gnu-bash&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=white)
 
+### 🛠️ Tech Stack
 
-## 🚀 Features
-- Real-time measurements of:
-  - CO<sub>2</sub> in ppm
-  - CO (Carbon Monoxide) in ppm
-  - CH<sub>4</sub> in ppm
-  - NO<sub>x</sub> in ppm
-  - PM2.5 particulate matter in μg/m<sup>3</sup>
-  - VOCs (Volatile Organic Compounds)
-  - Temperature (°C) and Humidity (%)
-- Web-based dashboard for live data visualization.
-  - Built using Electron, Typescript, Next.js, Python and [v0.dev](https://v0.dev)
-- PlatformIO-based development environment.
-- ROS Noetic for drone-Pi-ESP communication (via UART)
-  - Allows for GPS data to be pulled from the drone
-- Custom PCB + 3D-printed casing for DJI Matrice 210V2 (Matrice 350RTK Coming Soon)
+![ESP32](https://img.shields.io/badge/ESP32-E7352C?style=for-the-badge&logo=espressif&logoColor=white)
+![Raspberry Pi](https://img.shields.io/badge/Raspberry_Pi-A22846?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![C++](https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![PlatformIO](https://img.shields.io/badge/PlatformIO-FF7F00?style=for-the-badge&logo=platformio&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
+![Electron](https://img.shields.io/badge/Electron-47848F?style=for-the-badge&logo=electron&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+
+</div>
+
+---
+
+## 📊 System Overview
+
+![Data Transport Diagram](./Data%20Transport%20Diagram.png)
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🌡️ Comprehensive Sensor Suite
+- **CO₂** (Carbon Dioxide) in ppm
+- **CO** (Carbon Monoxide) in ppm
+- **CH₄** (Methane) in ppm
+- **NOₓ** (Nitrogen Oxides) in ppm
+- **PM2.5** Particulate Matter in μg/m³
+- **VOCs** (Volatile Organic Compounds)
+- **Temperature** & **Humidity** readings
+
+</td>
+<td width="50%">
+
+### 🖥️ Modern Dashboard
+- **Real-time** data visualization
+- **Live graphs** and metrics
+- **CSV export** for data analysis
+- Built with **Electron** + **TypeScript** + **Next.js**
+- Powered by **Python** backend
+- Designed with [v0.dev](https://v0.dev)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🔌 Wireless Communication
+- **ESP-NOW** protocol for long-range transmission
+- **Low latency** data streaming
+- **Reliable** connection between drone and ground station
+- **Real-time** telemetry updates
+
+</td>
+<td width="50%">
+
+### 🤖 ROS Integration
+- **ROS Noetic** for robust communication
+- **UART** connection between Raspberry Pi & ESP32
+- **GPS data** extraction from DJI drone
+- **Modular** architecture for easy expansion
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🛠️ Hardware Design
+- **Custom PCB** (designed in-house)
+- **3D-printed casing** for DJI Matrice 210V2
+- **Weather-resistant** enclosure
+- **Matrice 350RTK** support coming soon
+
+</td>
+<td width="50%">
+
+### ⚡ Developer Experience
+- **PlatformIO** for streamlined development
+- **Hot-reload** dashboard during development
+- **Automated** build scripts
+- **Comprehensive** documentation
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -54,7 +140,7 @@ This system integrates:
   - [Platform IO Extension](https://platformio.org/install/ide?install=vscode) for VSCode
   - [ROS Noetic](https://wiki.ros.org/noetic/Installation/Ubuntu) (This software was built in 2025 on Ubuntu 20.04)
   - [Optional but Recommended] [PlatformIO Core CLI](https://docs.platformio.org/en/latest/core/quickstart.html) for terminal workflows
-    
+
 ### 2. Clone the Repository on the Machine Used to Deploy to ESP32
 ```bash
 cd ~
@@ -68,9 +154,9 @@ code . # Open in VSCode (or editor of your choice)
 - Open the Drone_System Directory on **Visual Studio Code**.
 ```bash
 cd ~/Low-Cost-Sensors/drone_esp32
-``` 
-- Use PlatformIO to build and upload:  
-  - Click the right-facing arrow (➤) at the bottom of VSCode, or  
+```
+- Use PlatformIO to build and upload:
+  - Click the right-facing arrow (➤) at the bottom of VSCode, or
 ```shell
 # If using PIO command line
 pio run --target upload

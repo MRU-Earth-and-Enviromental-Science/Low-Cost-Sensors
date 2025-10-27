@@ -41,8 +41,8 @@ bool sgp_initialized = false;
 String lineBuffer;
 
 // MAC Address receiver
-uint8_t broadcastAddress[] = {0x88, 0x13, 0xbf, 0x82, 0x46, 0x3c}; // Replace with correct receiver MAC
-// 88:13:bf:82:19:94
+uint8_t broadcastAddress[] = {0xCC, 0x7B, 0x5C, 0x97, 0x46, 0x7C}; // Replace with correct receiver MAC
+
 //  Struct to hold sensor data
 typedef struct __attribute__((packed))
 {
@@ -67,6 +67,7 @@ SensorData sensorData;
 bool ros_connected = false;
 unsigned long last_connection_check = 0;
 
+// ros handling
 ros::NodeHandle nh;
 
 sensor_msgs::NavSatFix gps_data;
@@ -82,76 +83,12 @@ void gpsHealthCallback(const std_msgs::UInt8 &msg)
     gps_health = msg;
 }
 
+// ros subscribers
 ros::Subscriber<sensor_msgs::NavSatFix> gps_sub("/gps_node/gps_position", gpsCallback);
 ros::Subscriber<std_msgs::UInt8> health_sub("/gps_node/gps_health", gpsHealthCallback);
 
-// static double dmToDeg(const String &dm, char hemi)
-// {
-//     if (dm.length() < 4)
-//         return 0.0;
-//     double val = dm.toDouble();
-//     int deg = int(val / 100);
-//     double min = val - deg * 100;
-//     double dec = deg + min / 60.0;
-//     if (hemi == 'S' || hemi == 'W')
-//         dec = -dec;
-//     return dec;
-// }
-
-// void readPiData()
-// {
-//     while (Serial2.available())
-//     {
-//         char c = Serial2.read();
-
-//         if (c == '\n' || c == '\r')
-//         {
-//             if (lineBuffer.length())
-//             {
-//                 Serial.println("RAW: " + lineBuffer);
-
-//                 if (lineBuffer.startsWith("$GPRMC"))
-//                 {
-//                     int idx = 0;
-//                     String fields[12];
-//                     for (int i = 0; i < 12 && idx != -1; ++i)
-//                     {
-//                         int next = lineBuffer.indexOf(',', idx);
-//                         fields[i] = (next == -1) ? lineBuffer.substring(idx)
-//                                                  : lineBuffer.substring(idx, next);
-//                         idx = (next == -1) ? -1 : next + 1;
-//                     }
-
-//                     if (fields[2] == "A")
-//                     {
-//                         String latStr = fields[3];
-//                         char latHem = fields[4].charAt(0);
-//                         String lonStr = fields[5];
-//                         char lonHem = fields[6].charAt(0);
-
-//                         double lat = dmToDeg(latStr, latHem);
-//                         double lon = dmToDeg(lonStr, lonHem);
-
-//                         sensorData.lat = (float)lat;
-//                         sensorData.lon = (float)lon;
-
-//                         Serial.printf("✓ GPS  Lat: %.6f  Lon: %.6f\n", lat, lon);
-//                     }
-//                 }
-//             }
-//             lineBuffer = "";
-//         }
-//         else if (isPrintable(c))
-//         {
-//             lineBuffer += c;
-//         }
-//     }
-// }
-
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
-    // Serial.print("ESP-NOW send status: ");
-    // Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
     if (!senderConnected && status == ESP_NOW_SEND_SUCCESS)
     {
         senderConnected = true;
@@ -159,6 +96,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
     }
 }
 
+// using header file functions to read sensors
 void readSensors()
 {
     float h = dht.readHumidity();
@@ -168,8 +106,6 @@ void readSensors()
     if (isnan(t))
         t = -1.0;
     int co2ppm = -1;
-    //  if (k30.readCO2(co2ppm) != 0)
-    // Serial.println("CO2 read failed");
 
     int TVOC = -1;
     if (sgp_initialized && sgp.IAQmeasure())
@@ -187,6 +123,7 @@ void readSensors()
     sensorData.pm_10_0 = pms7003.getPM_10_0();
 }
 
+// send function to send data to the ground
 void sendData()
 {
     readSensors();
@@ -207,9 +144,6 @@ void sendData()
     Serial.println(sensorData.lon);
 
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sensorData, sizeof(sensorData));
-    // if (result == ESP_OK)
-    // Serial.println("ESP-NOW send success");
-    // Serial.printf("ESP-NOW send error: %d\n", result);
 }
 
 void checkRosConnection()
@@ -239,11 +173,9 @@ void setup()
     WiFi.mode(WIFI_STA);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
     esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
-    // Serial.println("ESP-NOW in Long-Range mode");
 
     if (esp_now_init() != ESP_OK)
     {
-        // Serial.println("ESP-NOW init failed");
         return;
     }
 
@@ -256,7 +188,6 @@ void setup()
 
     if (esp_now_add_peer(&peerInfo) != ESP_OK)
     {
-        // Serial.println("Failed to add peer");
         return;
     }
 
@@ -265,10 +196,8 @@ void setup()
     oledPrint("Booting...");
 
     delay(100);
-    // Serial.println("Starting PMS7003 on Serial1 (GPIO4)...");
     Serial1.begin(9600, SERIAL_8N1, 4, -1);
 
-    // REMOVED: Serial2.begin() - Using USB-C port (Serial) for ROS communication
 
     if (!pms7003.init(&Serial1))
         oledPrint("PMS FAIL");
@@ -276,12 +205,10 @@ void setup()
     if (sgp.begin())
     {
         sgp_initialized = true;
-        // Serial.println("SGP30 initialized");
         oledPrint("SGP30 OK");
     }
     else
     {
-        // Serial.println("SGP30 init FAILED");
         oledPrint("SGP30 FAILED");
         delay(500);
     }
@@ -308,7 +235,7 @@ void setup()
     Serial.println("Waiting for ROS connection...");
     oledPrint("Waiting for ROS...");
     unsigned long start_time = millis();
-    while (!nh.connected() && (millis() - start_time < 10000)) // 10 second timeout
+    while (!nh.connected() && (millis() - start_time < 4000)) // 4 second timeout
     {
         nh.spinOnce();
         delay(100);
@@ -328,11 +255,10 @@ void setup()
 
 void loop()
 {
-    // readPiData();
     nh.spinOnce();
 
-    // Check ROS connection status every 5 seconds
-    if (millis() - last_connection_check > 5000)
+    // Check ROS connection status every 3 seconds
+    if (millis() - last_connection_check > 3000)
     {
         checkRosConnection();
         last_connection_check = millis();
